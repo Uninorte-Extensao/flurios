@@ -29,4 +29,5 @@ build/
 Thumbs.db
 
 #banco de dados 
+
 *.db
