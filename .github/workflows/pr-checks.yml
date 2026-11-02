@@ -27,6 +27,8 @@ jobs:
 
       - name: Executar testes
         working-directory: backend
+        env:
+          SECRET_KEY: chave-secreta-para-ci
         run: python -m pytest tests
 
   frontend:
