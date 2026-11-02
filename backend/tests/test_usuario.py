@@ -72,6 +72,37 @@ def test_login_email_inexistente(client):
     assert response.status_code == 401
 
 
+def test_token_formulario_sucesso(client):
+    client.post(
+        "/usuarios",
+        json={"nome": "Maria", "email": "maria@teste.com", "senha": "123456"},
+    )
+
+    response = client.post(
+        "/usuarios/token",
+        data={"username": "maria@teste.com", "password": "123456"},
+    )
+
+    assert response.status_code == 200
+    corpo = response.json()
+    assert corpo["token_type"] == "bearer"
+    assert corpo["access_token"]
+
+
+def test_token_formulario_senha_invalida(client):
+    client.post(
+        "/usuarios",
+        json={"nome": "Maria", "email": "maria@teste.com", "senha": "123456"},
+    )
+
+    response = client.post(
+        "/usuarios/token",
+        data={"username": "maria@teste.com", "password": "errada"},
+    )
+
+    assert response.status_code == 401
+
+
 def test_gerar_hash_senha_nao_retorna_senha_em_texto_puro():
     hash_gerado = gerar_hash_senha("123456")
 
