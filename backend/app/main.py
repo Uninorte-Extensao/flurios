@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import usuario
+
 
 app = FastAPI(
   title="Flurios API",
@@ -17,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+app.include_router(usuario.router)
 
 
 @app.get("/health")
