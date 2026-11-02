@@ -75,6 +75,33 @@ def test_cadastrar_destinatario_sem_cadastro_de_cliente_retorna_403(client, db_s
     assert response.status_code == 403
 
 
+def test_cadastrar_destinatario_aceita_cpf_formatado_e_guarda_so_numeros(client, db_session):
+    _, token = _cadastrar_cliente_logado(db_session)
+    dados = {**DADOS_DESTINATARIO, "cpf": "111.222.333-96"}
+
+    response = client.post(
+        "/destinatarios",
+        json=dados,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["cpf"] == CPF_VALIDO_1
+
+
+def test_cadastrar_destinatario_cpf_invalido_retorna_422(client, db_session):
+    _, token = _cadastrar_cliente_logado(db_session)
+    dados = {**DADOS_DESTINATARIO, "cpf": "11122233300"}
+
+    response = client.post(
+        "/destinatarios",
+        json=dados,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
 def test_cadastrar_destinatario_permite_mesmo_cpf_em_mais_de_um_cadastro(client, db_session):
     _, token = _cadastrar_cliente_logado(db_session)
     headers = {"Authorization": f"Bearer {token}"}

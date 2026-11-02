@@ -1,13 +1,20 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, field_validator
+
+from app.core.cpf import normalizar_cpf
 
 class DestinatarioCreate(BaseModel):
     nome: str
-    cpf: str = Field(min_length=11, max_length=11)
+    cpf: str
     telefone: str
     endereco: str
     municipio: str
+
+    @field_validator("cpf")
+    @classmethod
+    def validar_cpf(cls, valor: str) -> str:
+        return normalizar_cpf(valor)
 
 
 class DestinatarioOut(BaseModel):

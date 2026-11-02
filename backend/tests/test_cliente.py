@@ -2,6 +2,9 @@ from app.core.security import criar_token_acesso
 from app.schemas.usuario import UsuarioCreate
 from app.services.usuario import criar_usuario
 
+CPF_VALIDO_1 = "12345678909"
+CPF_VALIDO_2 = "98765432100"
+
 
 def _cadastrar_e_logar(db_session):
     usuario = criar_usuario(
@@ -18,20 +21,69 @@ def test_cadastrar_cliente_sucesso(client, db_session):
 
     response = client.post(
         "/clientes",
-        json={"cpf": "12345678901", "telefone": "92999990000"},
+        json={"cpf": CPF_VALIDO_1, "telefone": "92999990000"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 201
     corpo = response.json()
-    assert corpo["cpf"] == "12345678901"
+    assert corpo["cpf"] == CPF_VALIDO_1
     assert corpo["telefone"] == "92999990000"
+
+
+def test_cadastrar_cliente_aceita_cpf_formatado_e_guarda_so_numeros(client, db_session):
+    _, token = _cadastrar_e_logar(db_session)
+
+    response = client.post(
+        "/clientes",
+        json={"cpf": "123.456.789-09", "telefone": "92999990000"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["cpf"] == CPF_VALIDO_1
+
+
+def test_cadastrar_cliente_cpf_com_digito_verificador_invalido_retorna_422(client, db_session):
+    _, token = _cadastrar_e_logar(db_session)
+
+    response = client.post(
+        "/clientes",
+        json={"cpf": "12345678900", "telefone": "92999990000"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_cadastrar_cliente_cpf_com_todos_digitos_iguais_retorna_422(client, db_session):
+    _, token = _cadastrar_e_logar(db_session)
+
+    response = client.post(
+        "/clientes",
+        json={"cpf": "11111111111", "telefone": "92999990000"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_cadastrar_cliente_cpf_com_tamanho_invalido_retorna_422(client, db_session):
+    _, token = _cadastrar_e_logar(db_session)
+
+    response = client.post(
+        "/clientes",
+        json={"cpf": "123456789", "telefone": "92999990000"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_cadastrar_cliente_sem_token_retorna_401(client):
     response = client.post(
         "/clientes",
-        json={"cpf": "12345678901", "telefone": "92999990000"},
+        json={"cpf": CPF_VALIDO_1, "telefone": "92999990000"},
     )
 
     assert response.status_code == 401
@@ -43,12 +95,12 @@ def test_cadastrar_cliente_duplicado_para_mesmo_usuario(client, db_session):
 
     client.post(
         "/clientes",
-        json={"cpf": "12345678901", "telefone": "92999990000"},
+        json={"cpf": CPF_VALIDO_1, "telefone": "92999990000"},
         headers=headers,
     )
     response = client.post(
         "/clientes",
-        json={"cpf": "98765432100", "telefone": "92999990001"},
+        json={"cpf": CPF_VALIDO_2, "telefone": "92999990001"},
         headers=headers,
     )
 
@@ -64,7 +116,7 @@ def test_cadastrar_cliente_cpf_duplicado_para_outro_usuario(client, db_session):
 
     client.post(
         "/clientes",
-        json={"cpf": "12345678901", "telefone": "92999990000"},
+        json={"cpf": CPF_VALIDO_1, "telefone": "92999990000"},
         headers={"Authorization": f"Bearer {token_joao}"},
     )
 
@@ -76,7 +128,7 @@ def test_cadastrar_cliente_cpf_duplicado_para_outro_usuario(client, db_session):
 
     response = client.post(
         "/clientes",
-        json={"cpf": "12345678901", "telefone": "92999990001"},
+        json={"cpf": CPF_VALIDO_1, "telefone": "92999990001"},
         headers={"Authorization": f"Bearer {token_maria}"},
     )
 
