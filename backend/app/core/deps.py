@@ -9,7 +9,7 @@ from app.models.cliente import Cliente
 from app.models.usuario import Usuario
 from app.services.cliente import buscar_cliente_por_usuario
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/usuarios/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/usuarios/token")
 
 CREDENCIAIS_INVALIDAS = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
