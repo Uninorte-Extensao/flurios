@@ -38,3 +38,7 @@ def completar_cadastro_cliente(
     db.refresh(novo_cliente)
 
     return novo_cliente
+
+
+def buscar_cliente_por_usuario(db: Session, usuario_id: int) -> Cliente | None:
+    return db.query(Cliente).filter(Cliente.usuario_id == usuario_id).first()

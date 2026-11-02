@@ -21,3 +21,7 @@ class DestinatarioOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DestinatarioDetalheOut(DestinatarioOut):
+    """Mesmo formato de DestinatarioOut, mas com o CPF sempre mascarado."""
