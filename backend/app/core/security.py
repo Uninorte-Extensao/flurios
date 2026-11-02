@@ -3,11 +3,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from pwdlib import PasswordHash
 
-from app.core.config import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    ALGORITHM,
-    SECRET_KEY,
-)
+from app.core.config import settings
 
 
 password_hash = PasswordHash.recommended()
@@ -27,7 +23,7 @@ def criar_token_acesso(
 ) -> str:
     payload = dados.copy()
 
-    minutos = expira_em_minutos or ACCESS_TOKEN_EXPIRE_MINUTES
+    minutos = expira_em_minutos or settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
     expiracao = datetime.now(timezone.utc) + timedelta(minutes=minutos)
 
@@ -35,7 +31,6 @@ def criar_token_acesso(
 
     return jwt.encode(
         payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM,
-
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
     )
