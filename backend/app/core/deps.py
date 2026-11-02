@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import get_db
+from app.models.cliente import Cliente
 from app.models.usuario import Usuario
+from app.services.cliente import buscar_cliente_por_usuario
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/usuarios/login")
 
@@ -40,3 +42,18 @@ def usuario_logado(
         raise CREDENCIAIS_INVALIDAS
 
     return usuario
+
+
+def cliente_logado(
+    usuario: Usuario = Depends(usuario_logado),
+    db: Session = Depends(get_db),
+) -> Cliente:
+    cliente = buscar_cliente_por_usuario(db, usuario.id)
+
+    if cliente is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario nao possui cadastro de cliente.",
+        )
+
+    return cliente

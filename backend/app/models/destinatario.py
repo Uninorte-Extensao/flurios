@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -9,6 +9,11 @@ class Destinatario(Base):
     __tablename__ = "destinatarios"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    cliente_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("clientes.id"),
+        nullable=False,
+    )
     nome: Mapped[str] = mapped_column(String(150), nullable=False)
     cpf: Mapped[str] = mapped_column(String(11), nullable=False)
     telefone: Mapped[str] = mapped_column(String(20), nullable=False)
