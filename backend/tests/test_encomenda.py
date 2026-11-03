@@ -298,3 +298,42 @@ def test_buscar_encomenda_de_outro_cliente_retorna_404(client, db_session):
     )
 
     assert response.status_code == 404
+
+
+def test_listar_encomendas_retorna_apenas_as_do_cliente_logado(client, db_session):
+    _, destinatario_maria, token_maria = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
+    )
+    headers_maria = {"Authorization": f"Bearer {token_maria}"}
+    dados_maria = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+    client.post("/encomendas", json=dados_maria, headers=headers_maria)
+    client.post("/encomendas", json=dados_maria, headers=headers_maria)
+
+    _, destinatario_joao, token_joao = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="joao@teste.com", cpf_cliente=CPF_CLIENTE_2
+    )
+    headers_joao = {"Authorization": f"Bearer {token_joao}"}
+    dados_joao = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_joao.id}
+    client.post("/encomendas", json=dados_joao, headers=headers_joao)
+
+    response = client.get("/encomendas", headers=headers_maria)
+
+    assert response.status_code == 200
+    corpo = response.json()
+    assert len(corpo) == 2
+    assert all(encomenda["destinatario_id"] == destinatario_maria.id for encomenda in corpo)
+
+
+def test_listar_encomendas_sem_encomendas_retorna_lista_vazia(client, db_session):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+
+    response = client.get("/encomendas", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_listar_encomendas_sem_token_retorna_401(client):
+    response = client.get("/encomendas")
+
+    assert response.status_code == 401
