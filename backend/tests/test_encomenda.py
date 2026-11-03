@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from app.core.security import criar_token_acesso
 from app.models.encomenda import Encomenda, StatusEncomenda
 from app.schemas.cliente import ClienteCreate
 from app.schemas.destinatario import DestinatarioCreate
@@ -11,19 +12,24 @@ from app.services.destinatario import criar_destinatario
 from app.services.encomenda import gerar_codigo_rastreio_unico
 from app.services.usuario import criar_usuario
 
-CPF_CLIENTE = "11122233396"
+CPF_CLIENTE_1 = "11122233396"
+CPF_CLIENTE_2 = "33344455508"
 CPF_DESTINATARIO = "22233344405"
 
+DADOS_ENCOMENDA = {"descricao": "Caixa de ferramentas"}
 
-def _cadastrar_cliente_com_destinatario(db_session):
+
+def _cadastrar_cliente_com_destinatario(
+    db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
+):
     usuario = criar_usuario(
         db_session,
-        UsuarioCreate(nome="Maria", email="maria@teste.com", senha="123456"),
+        UsuarioCreate(nome="Maria", email=email, senha="123456"),
     )
     cliente = completar_cadastro_cliente(
         db_session,
         usuario,
-        ClienteCreate(cpf=CPF_CLIENTE, telefone="92999990000"),
+        ClienteCreate(cpf=cpf_cliente, telefone="92999990000"),
     )
     destinatario = criar_destinatario(
         db_session,
@@ -38,6 +44,13 @@ def _cadastrar_cliente_com_destinatario(db_session):
     )
 
     return cliente, destinatario
+
+
+def _cadastrar_cliente_logado_com_destinatario(db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1):
+    cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session, email, cpf_cliente)
+    token = criar_token_acesso({"sub": str(cliente.usuario_id)})
+
+    return cliente, destinatario, token
 
 
 def _criar_encomenda_sem_status(db_session, cliente_id, destinatario_id):
@@ -139,3 +152,92 @@ def test_banco_rejeita_status_fora_da_lista_fixa(db_session):
             {"cliente_id": cliente.id, "destinatario_id": destinatario.id},
         )
         db_session.commit()
+
+
+def test_cadastrar_encomenda_sucesso(client, db_session):
+    cliente, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+
+    response = client.post(
+        "/encomendas",
+        json=dados,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    corpo = response.json()
+    assert corpo["cliente_id"] == cliente.id
+    assert corpo["destinatario_id"] == destinatario.id
+    assert corpo["descricao"] == DADOS_ENCOMENDA["descricao"]
+    assert corpo["status"] == "pendente"
+    assert corpo["codigo_rastreio"]
+
+
+def test_cadastrar_encomenda_sem_token_retorna_401(client, db_session):
+    _, destinatario = _cadastrar_cliente_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+
+    response = client.post("/encomendas", json=dados)
+
+    assert response.status_code == 401
+
+
+def test_cadastrar_encomenda_sem_cadastro_de_cliente_retorna_403(client, db_session):
+    usuario = criar_usuario(
+        db_session,
+        UsuarioCreate(nome="Joao", email="joao@teste.com", senha="123456"),
+    )
+    token = criar_token_acesso({"sub": str(usuario.id)})
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": 1}
+
+    response = client.post(
+        "/encomendas",
+        json=dados,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_cadastrar_encomenda_destinatario_inexistente_retorna_404(client, db_session):
+    _, _, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": 9999}
+
+    response = client.post(
+        "/encomendas",
+        json=dados,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_cadastrar_encomenda_destinatario_de_outro_cliente_retorna_404(client, db_session):
+    _, destinatario_maria, _ = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
+    )
+    _, _, token_joao = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="joao@teste.com", cpf_cliente=CPF_CLIENTE_2
+    )
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+
+    response = client.post(
+        "/encomendas",
+        json=dados,
+        headers={"Authorization": f"Bearer {token_joao}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_cadastrar_encomenda_gera_codigos_diferentes_para_cada_encomenda(client, db_session):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    primeira = client.post("/encomendas", json=dados, headers=headers)
+    segunda = client.post("/encomendas", json=dados, headers=headers)
+
+    assert primeira.status_code == 201
+    assert segunda.status_code == 201
+    assert primeira.json()["codigo_rastreio"] != segunda.json()["codigo_rastreio"]
