@@ -8,6 +8,7 @@ from app.db.base import Base
 from app.models.usuario import Usuario
 from app.models.cliente import Cliente
 from app.models.destinatario import Destinatario
+from app.models.encomenda import Encomenda
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
