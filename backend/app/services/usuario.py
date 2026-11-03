@@ -27,6 +27,10 @@ def criar_usuario(db: Session, dados: UsuarioCreate) -> Usuario:
     return novo_usuario
 
 
+def buscar_usuario_por_email(db: Session, email: str) -> Usuario | None:
+    return db.query(Usuario).filter(Usuario.email == email).first()
+
+
 def autenticar(
     db: Session,
     email: str,
