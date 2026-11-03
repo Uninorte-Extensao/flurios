@@ -25,6 +25,21 @@ def gerar_codigo_rastreio_unico(db: Session) -> str:
     raise RuntimeError("Nao foi possivel gerar um codigo de rastreio unico.")
 
 
+def buscar_encomenda_do_cliente(
+    db: Session,
+    codigo_rastreio: str,
+    cliente_id: int,
+) -> Encomenda | None:
+    return (
+        db.query(Encomenda)
+        .filter(
+            Encomenda.codigo_rastreio == codigo_rastreio,
+            Encomenda.cliente_id == cliente_id,
+        )
+        .first()
+    )
+
+
 def criar_encomenda(
     db: Session,
     cliente: Cliente,

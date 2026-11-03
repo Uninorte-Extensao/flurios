@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.models.cliente import Cliente
 from app.schemas.encomenda import EncomendaCreate, EncomendaOut
 from app.services.destinatario import buscar_destinatario_do_cliente
-from app.services.encomenda import criar_encomenda
+from app.services.encomenda import buscar_encomenda_do_cliente, criar_encomenda
 
 router = APIRouter(prefix="/encomendas", tags=["encomendas"])
 
@@ -26,3 +26,20 @@ def cadastrar_encomenda(
         )
 
     return criar_encomenda(db, cliente, destinatario, dados)
+
+
+@router.get("/{codigo}", response_model=EncomendaOut)
+def buscar_encomenda(
+    codigo: str,
+    cliente: Cliente = Depends(cliente_logado),
+    db: Session = Depends(get_db),
+):
+    encomenda = buscar_encomenda_do_cliente(db, codigo, cliente.id)
+
+    if encomenda is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encomenda nao encontrada.",
+        )
+
+    return encomenda
