@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.cliente import Cliente
+from app.models.empresa import Empresa, PerfilEmpresa
 from app.models.usuario import Usuario
 from app.services.cliente import buscar_cliente_por_usuario
+from app.services.empresa import buscar_empresa_por_usuario
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/usuarios/token")
 
@@ -57,3 +59,30 @@ def cliente_logado(
         )
 
     return cliente
+
+
+def empresa_logado(
+    usuario: Usuario = Depends(usuario_logado),
+    db: Session = Depends(get_db),
+) -> Empresa:
+    empresa = buscar_empresa_por_usuario(db, usuario.id)
+
+    if empresa is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario nao possui cadastro de empresa.",
+        )
+
+    return empresa
+
+
+def empresa_administrador(
+    empresa: Empresa = Depends(empresa_logado),
+) -> Empresa:
+    if empresa.perfil != PerfilEmpresa.ADMINISTRADOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acao restrita a administradores.",
+        )
+
+    return empresa

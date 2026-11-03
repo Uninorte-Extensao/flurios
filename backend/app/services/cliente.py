@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.cliente import Cliente
+from app.models.empresa import Empresa
 from app.models.usuario import Usuario
 from app.schemas.cliente import ClienteCreate
 
@@ -17,6 +18,15 @@ def completar_cadastro_cliente(
 
     if cliente_existente:
         raise ValueError("Usuario ja possui cadastro de cliente.")
+
+    empresa_existente = (
+        db.query(Empresa)
+        .filter(Empresa.usuario_id == usuario.id)
+        .first()
+    )
+
+    if empresa_existente:
+        raise ValueError("Usuario ja possui cadastro de empresa.")
 
     cpf_em_uso = (
         db.query(Cliente)
