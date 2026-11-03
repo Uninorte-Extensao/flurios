@@ -3,12 +3,14 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.security import criar_token_acesso
+from app.models.empresa import PerfilEmpresa
 from app.models.encomenda import Encomenda, StatusEncomenda
 from app.schemas.cliente import ClienteCreate
 from app.schemas.destinatario import DestinatarioCreate
 from app.schemas.usuario import UsuarioCreate
 from app.services.cliente import completar_cadastro_cliente
 from app.services.destinatario import criar_destinatario
+from app.services.empresa import completar_cadastro_empresa
 from app.services.encomenda import gerar_codigo_rastreio_unico
 from app.services.usuario import criar_usuario
 
@@ -51,6 +53,17 @@ def _cadastrar_cliente_logado_com_destinatario(db_session, email="maria@teste.co
     token = criar_token_acesso({"sub": str(cliente.usuario_id)})
 
     return cliente, destinatario, token
+
+
+def _cadastrar_empresa_logada(db_session, email="operador@teste.com", perfil=PerfilEmpresa.OPERADOR_EMBARCACAO):
+    usuario = criar_usuario(
+        db_session,
+        UsuarioCreate(nome="Operador", email=email, senha="123456"),
+    )
+    empresa = completar_cadastro_empresa(db_session, usuario, perfil)
+    token = criar_token_acesso({"sub": str(usuario.id)})
+
+    return empresa, token
 
 
 def _criar_encomenda_sem_status(db_session, cliente_id, destinatario_id):
@@ -337,3 +350,104 @@ def test_listar_encomendas_sem_token_retorna_401(client):
     response = client.get("/encomendas")
 
     assert response.status_code == 401
+
+
+def test_atualizar_status_encomenda_sucesso(client, db_session):
+    _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
+    ).json()
+
+    _, token_empresa = _cadastrar_empresa_logada(db_session)
+
+    response = client.patch(
+        f"/encomendas/{criada['id']}/status",
+        json={"status": "recebida"},
+        headers={"Authorization": f"Bearer {token_empresa}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "recebida"
+
+
+def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db_session):
+    _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
+    ).json()
+
+    _, token_atendente = _cadastrar_empresa_logada(
+        db_session, email="atendente@teste.com", perfil=PerfilEmpresa.ATENDENTE
+    )
+
+    response = client.patch(
+        f"/encomendas/{criada['id']}/status",
+        json={"status": "aguardando_embarque"},
+        headers={"Authorization": f"Bearer {token_atendente}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "aguardando_embarque"
+
+
+def test_atualizar_status_encomenda_sem_token_retorna_401(client, db_session):
+    _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
+    ).json()
+
+    response = client.patch(
+        f"/encomendas/{criada['id']}/status",
+        json={"status": "recebida"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_atualizar_status_encomenda_cliente_logado_retorna_403(client, db_session):
+    _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
+    ).json()
+
+    response = client.patch(
+        f"/encomendas/{criada['id']}/status",
+        json={"status": "recebida"},
+        headers={"Authorization": f"Bearer {token_cliente}"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_atualizar_status_encomenda_inexistente_retorna_404(client, db_session):
+    _, token_empresa = _cadastrar_empresa_logada(db_session)
+
+    response = client.patch(
+        "/encomendas/9999/status",
+        json={"status": "recebida"},
+        headers={"Authorization": f"Bearer {token_empresa}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_atualizar_status_encomenda_status_fora_da_lista_fixa_retorna_422(client, db_session):
+    _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
+    ).json()
+
+    _, token_empresa = _cadastrar_empresa_logada(db_session)
+
+    response = client.patch(
+        f"/encomendas/{criada['id']}/status",
+        json={"status": "status_que_nao_existe"},
+        headers={"Authorization": f"Bearer {token_empresa}"},
+    )
+
+    assert response.status_code == 422

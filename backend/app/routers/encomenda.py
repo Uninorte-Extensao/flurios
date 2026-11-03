@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import cliente_logado
+from app.core.deps import cliente_logado, empresa_logado
 from app.db.session import get_db
 from app.models.cliente import Cliente
-from app.schemas.encomenda import EncomendaCreate, EncomendaOut
+from app.models.empresa import Empresa
+from app.schemas.encomenda import EncomendaCreate, EncomendaOut, EncomendaStatusUpdate
 from app.services.destinatario import buscar_destinatario_do_cliente
 from app.services.encomenda import (
+    atualizar_status_encomenda,
     buscar_encomenda_do_cliente,
+    buscar_encomenda_por_id,
     criar_encomenda,
     listar_encomendas_do_cliente,
 )
@@ -55,3 +58,21 @@ def buscar_encomenda(
         )
 
     return encomenda
+
+
+@router.patch("/{encomenda_id}/status", response_model=EncomendaOut)
+def atualizar_status(
+    encomenda_id: int,
+    dados: EncomendaStatusUpdate,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    encomenda = buscar_encomenda_por_id(db, encomenda_id)
+
+    if encomenda is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encomenda nao encontrada.",
+        )
+
+    return atualizar_status_encomenda(db, encomenda, dados.status)

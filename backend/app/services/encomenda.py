@@ -40,6 +40,23 @@ def buscar_encomenda_do_cliente(
     )
 
 
+def buscar_encomenda_por_id(db: Session, encomenda_id: int) -> Encomenda | None:
+    return db.query(Encomenda).filter(Encomenda.id == encomenda_id).first()
+
+
+def atualizar_status_encomenda(
+    db: Session,
+    encomenda: Encomenda,
+    novo_status: StatusEncomenda,
+) -> Encomenda:
+    encomenda.status = novo_status
+
+    db.commit()
+    db.refresh(encomenda)
+
+    return encomenda
+
+
 def listar_encomendas_do_cliente(db: Session, cliente_id: int) -> list[Encomenda]:
     return (
         db.query(Encomenda)

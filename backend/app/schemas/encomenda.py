@@ -9,6 +9,10 @@ class EncomendaCreate(BaseModel):
     descricao: str
 
 
+class EncomendaStatusUpdate(BaseModel):
+    status: StatusEncomenda
+
+
 class EncomendaOut(BaseModel):
     id: int
     cliente_id: int
