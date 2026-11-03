@@ -40,6 +40,9 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 1.6 | Criar endpoint `POST /usuarios/login` | P0 | 🟢 | 1.4 |
 | 1.7 | Criar dependência `usuario_logado` (protege rotas de outros módulos) | P0 | 🟡 | 1.6 |
 | 1.8 | Escrever testes automatizados de cadastro/login | P1 | 🟢 | 1.6 |
+| 1.9 | Criar model `Empresa` (vinculado a `Usuario`, com `perfil`: administrador/atendente/operador_embarcacao/funcionario_retirada) + migration | P0 | 🟢 | 1.1 |
+| 1.10 | Criar schemas `EmpresaCreate`/`EmpresaOut`, service de cadastro de empresa e dependência `empresa_logado` (impede que um `Usuario` seja Cliente e Empresa ao mesmo tempo) | P0 | 🟡 | 1.9 |
+| 1.11 | Endpoint `POST /empresas` (só administrador cria novos usuários de empresa) + script de linha de comando para criar o primeiro administrador | P0 | 🟡 | 1.10 |
 
 *Até 2 pessoas em paralelo: uma em 1.1–1.4 (modelagem/lógica), outra em 1.5–1.8 (endpoints/testes) assim que os schemas (1.2) estiverem prontos.*
 
@@ -71,7 +74,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 3.4 | Endpoint `POST /encomendas` (cadastro) | P0 | 🟡 | 3.2, 3.3 |
 | 3.5 | Endpoint `GET /encomendas/{codigo}` | P0 | 🟢 | 3.4 |
 | 3.6 | Endpoint `GET /encomendas?cliente_id=` (lista do cliente) | P1 | 🟢 | 3.4 |
-| 3.7 | Endpoint `PATCH /encomendas/{id}/status` | P0 | 🟡 | 3.3 |
+| 3.7 | Endpoint `PATCH /encomendas/{id}/status` (acao de Empresa, nao de Cliente) | P0 | 🟡 | 3.3, 1.10 |
 | 3.8 | Testes automatizados (cadastro, geração de código, mudança de status) | P1 | 🟡 | 3.7 |
 
 *Duas pessoas em paralelo: uma em modelagem + geração de código (3.1–3.3), outra em endpoints (3.4–3.8) assim que 3.1 estiver pronto.*

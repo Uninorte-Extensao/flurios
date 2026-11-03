@@ -7,6 +7,7 @@ from alembic import context
 from app.db.base import Base
 from app.models.usuario import Usuario
 from app.models.cliente import Cliente
+from app.models.empresa import Empresa
 from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda
 
