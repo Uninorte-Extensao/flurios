@@ -241,3 +241,60 @@ def test_cadastrar_encomenda_gera_codigos_diferentes_para_cada_encomenda(client,
     assert primeira.status_code == 201
     assert segunda.status_code == 201
     assert primeira.json()["codigo_rastreio"] != segunda.json()["codigo_rastreio"]
+
+
+def test_buscar_encomenda_por_codigo_sucesso(client, db_session):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    headers = {"Authorization": f"Bearer {token}"}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post("/encomendas", json=dados, headers=headers).json()
+
+    response = client.get(f"/encomendas/{criada['codigo_rastreio']}", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["codigo_rastreio"] == criada["codigo_rastreio"]
+
+
+def test_buscar_encomenda_por_codigo_sem_token_retorna_401(client, db_session):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    headers = {"Authorization": f"Bearer {token}"}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    criada = client.post("/encomendas", json=dados, headers=headers).json()
+
+    response = client.get(f"/encomendas/{criada['codigo_rastreio']}")
+
+    assert response.status_code == 401
+
+
+def test_buscar_encomenda_por_codigo_inexistente_retorna_404(client, db_session):
+    _, _, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+
+    response = client.get(
+        "/encomendas/FLXNAOEXISTE",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_buscar_encomenda_de_outro_cliente_retorna_404(client, db_session):
+    _, destinatario_maria, token_maria = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
+    )
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+    criada = client.post(
+        "/encomendas",
+        json=dados,
+        headers={"Authorization": f"Bearer {token_maria}"},
+    ).json()
+
+    _, _, token_joao = _cadastrar_cliente_logado_com_destinatario(
+        db_session, email="joao@teste.com", cpf_cliente=CPF_CLIENTE_2
+    )
+
+    response = client.get(
+        f"/encomendas/{criada['codigo_rastreio']}",
+        headers={"Authorization": f"Bearer {token_joao}"},
+    )
+
+    assert response.status_code == 404
