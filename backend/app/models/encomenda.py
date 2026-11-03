@@ -1,9 +1,22 @@
+import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+
+class StatusEncomenda(str, enum.Enum):
+    PENDENTE = "pendente"
+    RECEBIDA = "recebida"
+    AGUARDANDO_EMBARQUE = "aguardando_embarque"
+    EMBARCADA = "embarcada"
+    EM_TRANSITO = "em_transito"
+    CHEGOU_AO_DESTINO = "chegou_ao_destino"
+    A_RETIRAR = "a_retirar"
+    ENTREGUE = "entregue"
+    IMPREVISTO = "imprevisto"
+
 
 class Encomenda(Base):
     __tablename__ = "encomendas"
@@ -26,9 +39,17 @@ class Encomenda(Base):
         index=True,
     )
     descricao: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(30),
-        default="pendente",
+    status: Mapped[StatusEncomenda] = mapped_column(
+        Enum(
+            StatusEncomenda,
+            name="status_encomenda",
+            native_enum=False,
+            create_constraint=True,
+            length=30,
+            validate_strings=True,
+            values_callable=lambda enum_cls: [membro.value for membro in enum_cls],
+        ),
+        default=StatusEncomenda.PENDENTE,
         nullable=False,
     )
     criado_em: Mapped[datetime] = mapped_column(
