@@ -40,6 +40,15 @@ def buscar_encomenda_do_cliente(
     )
 
 
+def listar_encomendas_do_cliente(db: Session, cliente_id: int) -> list[Encomenda]:
+    return (
+        db.query(Encomenda)
+        .filter(Encomenda.cliente_id == cliente_id)
+        .order_by(Encomenda.criado_em.desc())
+        .all()
+    )
+
+
 def criar_encomenda(
     db: Session,
     cliente: Cliente,
