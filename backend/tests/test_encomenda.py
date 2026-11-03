@@ -1,6 +1,8 @@
 import pytest
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
-from app.models.encomenda import Encomenda
+from app.models.encomenda import Encomenda, StatusEncomenda
 from app.schemas.cliente import ClienteCreate
 from app.schemas.destinatario import DestinatarioCreate
 from app.schemas.usuario import UsuarioCreate
@@ -36,6 +38,19 @@ def _cadastrar_cliente_com_destinatario(db_session):
     )
 
     return cliente, destinatario
+
+
+def _criar_encomenda_sem_status(db_session, cliente_id, destinatario_id):
+    encomenda = Encomenda(
+        cliente_id=cliente_id,
+        destinatario_id=destinatario_id,
+        codigo_rastreio="FLXSEMSTATUS",
+        descricao="Caixa de teste",
+    )
+    db_session.add(encomenda)
+    db_session.commit()
+
+    return encomenda
 
 
 def _criar_encomenda_direto(db_session, cliente_id, destinatario_id, codigo):
@@ -86,3 +101,41 @@ def test_gerar_codigo_rastreio_unico_levanta_erro_apos_esgotar_tentativas(
 
     with pytest.raises(RuntimeError):
         gerar_codigo_rastreio_unico(db_session)
+
+
+def test_lista_fixa_de_status_segue_ordem_definida():
+    assert [status.value for status in StatusEncomenda] == [
+        "pendente",
+        "recebida",
+        "aguardando_embarque",
+        "embarcada",
+        "em_transito",
+        "chegou_ao_destino",
+        "a_retirar",
+        "entregue",
+        "imprevisto",
+    ]
+
+
+def test_encomenda_usa_status_pendente_como_padrao(db_session):
+    cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session)
+
+    encomenda = _criar_encomenda_sem_status(db_session, cliente.id, destinatario.id)
+
+    assert encomenda.status == StatusEncomenda.PENDENTE
+
+
+def test_banco_rejeita_status_fora_da_lista_fixa(db_session):
+    cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session)
+
+    with pytest.raises(IntegrityError):
+        db_session.execute(
+            text(
+                "INSERT INTO encomendas "
+                "(cliente_id, destinatario_id, codigo_rastreio, descricao, status, criado_em) "
+                "VALUES (:cliente_id, :destinatario_id, 'FLXINVALIDO01', 'caixa', "
+                "'status_que_nao_existe', '2026-01-01')"
+            ),
+            {"cliente_id": cliente.id, "destinatario_id": destinatario.id},
+        )
+        db_session.commit()
