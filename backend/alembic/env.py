@@ -12,6 +12,7 @@ from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda
 from app.models.embarcacao import Embarcacao
 from app.models.rota import Rota
+from app.models.parada import Parada
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
