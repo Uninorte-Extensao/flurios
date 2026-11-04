@@ -10,6 +10,7 @@ from app.models.cliente import Cliente
 from app.models.empresa import Empresa
 from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda
+from app.models.embarcacao import Embarcacao
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
