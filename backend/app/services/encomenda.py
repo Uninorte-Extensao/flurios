@@ -41,6 +41,14 @@ def buscar_encomenda_do_cliente(
     )
 
 
+def buscar_encomenda_por_codigo(db: Session, codigo_rastreio: str) -> Encomenda | None:
+    return (
+        db.query(Encomenda)
+        .filter(Encomenda.codigo_rastreio == codigo_rastreio)
+        .first()
+    )
+
+
 def buscar_encomenda_por_id(db: Session, encomenda_id: int) -> Encomenda | None:
     return db.query(Encomenda).filter(Encomenda.id == encomenda_id).first()
 
