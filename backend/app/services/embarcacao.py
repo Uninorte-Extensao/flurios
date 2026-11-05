@@ -1,7 +1,12 @@
 from sqlalchemy.orm import Session
 
 from app.models.embarcacao import Embarcacao
+from app.models.viagem import Viagem
 from app.schemas.embarcacao import EmbarcacaoCreate, EmbarcacaoUpdate
+
+MENSAGEM_EMBARCACAO_COM_VIAGENS = (
+    "Nao e possivel excluir uma embarcacao que ja possui viagens."
+)
 
 
 def criar_embarcacao(db: Session, dados: EmbarcacaoCreate) -> Embarcacao:
@@ -38,5 +43,12 @@ def atualizar_embarcacao(
 
 
 def excluir_embarcacao(db: Session, embarcacao: Embarcacao) -> None:
+    possui_viagens = (
+        db.query(Viagem.id).filter(Viagem.embarcacao_id == embarcacao.id).first()
+    )
+
+    if possui_viagens is not None:
+        raise ValueError(MENSAGEM_EMBARCACAO_COM_VIAGENS)
+
     db.delete(embarcacao)
     db.commit()

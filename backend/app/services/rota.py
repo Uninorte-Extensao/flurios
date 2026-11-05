@@ -2,7 +2,10 @@ from sqlalchemy.orm import Session
 
 from app.models.parada import Parada
 from app.models.rota import Rota
+from app.models.viagem import Viagem
 from app.schemas.rota import RotaCreate, RotaUpdate
+
+MENSAGEM_ROTA_COM_VIAGENS = "Nao e possivel excluir uma rota que ja possui viagens."
 
 
 def criar_rota(db: Session, dados: RotaCreate) -> Rota:
@@ -34,6 +37,11 @@ def atualizar_rota(db: Session, rota: Rota, dados: RotaUpdate) -> Rota:
 
 
 def excluir_rota(db: Session, rota: Rota) -> None:
+    possui_viagens = db.query(Viagem.id).filter(Viagem.rota_id == rota.id).first()
+
+    if possui_viagens is not None:
+        raise ValueError(MENSAGEM_ROTA_COM_VIAGENS)
+
     db.query(Parada).filter(Parada.rota_id == rota.id).delete()
     db.delete(rota)
     db.commit()

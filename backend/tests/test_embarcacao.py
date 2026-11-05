@@ -71,3 +71,25 @@ def test_cliente_nao_acessa_embarcacoes(client, headers_cliente):
     assert client.get("/embarcacoes/1", headers=headers_cliente).status_code == 403
     assert client.patch("/embarcacoes/1", json={"nome": "X"}, headers=headers_cliente).status_code == 403
     assert client.delete("/embarcacoes/1", headers=headers_cliente).status_code == 403
+
+
+def test_nao_exclui_embarcacao_que_ja_possui_viagens(client, db_session, headers_empresa):
+    from datetime import datetime
+
+    from app.models.rota import Rota
+    from app.models.viagem import Viagem
+
+    embarcacao_id = client.post("/embarcacoes", json=DADOS, headers=headers_empresa).json()["id"]
+    rota = Rota(nome="Manaus - Parintins")
+    db_session.add(rota)
+    db_session.commit()
+    db_session.add(
+        Viagem(embarcacao_id=embarcacao_id, rota_id=rota.id, data_saida=datetime(2026, 12, 1, 8, 0))
+    )
+    db_session.commit()
+
+    resposta = client.delete(f"/embarcacoes/{embarcacao_id}", headers=headers_empresa)
+
+    assert resposta.status_code == 409
+    assert "viagens" in resposta.json()["detail"]
+    assert client.get(f"/embarcacoes/{embarcacao_id}", headers=headers_empresa).status_code == 200

@@ -127,3 +127,28 @@ def test_cliente_nao_acessa_rotas_e_paradas(client, headers_cliente):
     assert client.get("/rotas/1/paradas", headers=h).status_code == 403
     assert client.patch("/rotas/1/paradas/1", json={"nome": "X"}, headers=h).status_code == 403
     assert client.delete("/rotas/1/paradas/1", headers=h).status_code == 403
+
+
+def test_nao_exclui_rota_que_ja_possui_viagens(client, db_session, headers_empresa):
+    from datetime import datetime
+
+    from app.models.embarcacao import Embarcacao
+    from app.models.viagem import Viagem
+
+    rota_id = _criar_rota(client, headers_empresa)
+    assert _criar_parada(client, headers_empresa, rota_id, "Manaus", 1).status_code == 201
+    embarcacao = Embarcacao(nome="Rio Negro I", capacidade=120)
+    db_session.add(embarcacao)
+    db_session.commit()
+    db_session.add(
+        Viagem(embarcacao_id=embarcacao.id, rota_id=rota_id, data_saida=datetime(2026, 12, 1, 8, 0))
+    )
+    db_session.commit()
+
+    resposta = client.delete(f"/rotas/{rota_id}", headers=headers_empresa)
+
+    assert resposta.status_code == 409
+    assert "viagens" in resposta.json()["detail"]
+    detalhe = client.get(f"/rotas/{rota_id}", headers=headers_empresa)
+    assert detalhe.status_code == 200
+    assert [p["nome"] for p in detalhe.json()["paradas"]] == ["Manaus"]
