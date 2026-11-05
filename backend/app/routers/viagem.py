@@ -9,11 +9,17 @@ from app.schemas.viagem import (
     ViagemEncomendaCreate,
     ViagemEncomendaOut,
     ViagemOut,
+    ViagemStatusUpdate,
 )
 from app.services.encomenda import buscar_encomenda_por_id
 from app.services.embarcacao import buscar_embarcacao_por_id
 from app.services.rota import buscar_rota_por_id
-from app.services.viagem import associar_encomenda, buscar_viagem_por_id, criar_viagem
+from app.services.viagem import (
+    associar_encomenda,
+    atualizar_status_viagem,
+    buscar_viagem_por_id,
+    criar_viagem,
+)
 
 router = APIRouter(prefix="/viagens", tags=["viagens"])
 
@@ -68,5 +74,26 @@ def associar_encomenda_a_viagem(
 
     try:
         return associar_encomenda(db, viagem, encomenda)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
+
+
+@router.patch("/{viagem_id}/status", response_model=ViagemOut)
+def atualizar_status(
+    viagem_id: int,
+    dados: ViagemStatusUpdate,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    viagem = buscar_viagem_por_id(db, viagem_id)
+
+    if viagem is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada.",
+        )
+
+    try:
+        return atualizar_status_viagem(db, viagem, dados.status)
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))

@@ -309,3 +309,84 @@ def test_associar_encomenda_exige_empresa_logada(client, headers_cliente):
 
     assert client.post("/viagens/1/encomendas", json=corpo).status_code == 401
     assert client.post("/viagens/1/encomendas", json=corpo, headers=headers_cliente).status_code == 403
+
+
+# ---------- T5.4: PATCH /viagens/{id}/status ----------
+
+
+def _patch_status(client, headers, viagem_id, novo_status):
+    return client.patch(
+        f"/viagens/{viagem_id}/status", json={"status": novo_status}, headers=headers
+    )
+
+
+def test_fluxo_completo_programada_em_andamento_concluida(client, headers_empresa):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+
+    em_andamento = _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+    assert em_andamento.status_code == 200
+    assert em_andamento.json()["status"] == "em_andamento"
+
+    concluida = _patch_status(client, headers_empresa, viagem_id, "concluida")
+    assert concluida.status_code == 200
+    assert concluida.json()["status"] == "concluida"
+
+
+@pytest.mark.parametrize("passos", [[], ["em_andamento"]])
+def test_viagem_pode_ser_cancelada_se_programada_ou_em_andamento(client, headers_empresa, passos):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    for passo in passos:
+        assert _patch_status(client, headers_empresa, viagem_id, passo).status_code == 200
+
+    resposta = _patch_status(client, headers_empresa, viagem_id, "cancelada")
+
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == "cancelada"
+
+
+@pytest.mark.parametrize(
+    "caminho, destino",
+    [
+        ([], "concluida"),  # programada -> concluida (pula etapa)
+        ([], "programada"),  # mesmo status
+        (["em_andamento"], "programada"),  # volta
+        (["em_andamento", "concluida"], "cancelada"),  # final
+        (["em_andamento", "concluida"], "em_andamento"),  # final
+        (["cancelada"], "programada"),  # final
+        (["cancelada"], "em_andamento"),  # final
+    ],
+)
+def test_transicoes_invalidas_retornam_409_e_nao_alteram_a_viagem(
+    client, db_session, headers_empresa, caminho, destino
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    for passo in caminho:
+        assert _patch_status(client, headers_empresa, viagem_id, passo).status_code == 200
+    status_antes = caminho[-1] if caminho else "programada"
+
+    resposta = _patch_status(client, headers_empresa, viagem_id, destino)
+
+    assert resposta.status_code == 409
+    assert "Transicao de status invalida" in resposta.json()["detail"]
+    db_session.expire_all()
+    assert db_session.get(Viagem, viagem_id).status.value == status_antes
+
+
+def test_status_desconhecido_retorna_422(client, headers_empresa):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+
+    assert _patch_status(client, headers_empresa, viagem_id, "voando").status_code == 422
+
+
+def test_atualizar_status_de_viagem_inexistente_retorna_404(client, headers_empresa):
+    resposta = _patch_status(client, headers_empresa, 999, "em_andamento")
+
+    assert resposta.status_code == 404
+    assert resposta.json()["detail"] == "Viagem nao encontrada."
+
+
+def test_atualizar_status_da_viagem_exige_empresa_logada(client, headers_cliente):
+    corpo = {"status": "em_andamento"}
+
+    assert client.patch("/viagens/1/status", json=corpo).status_code == 401
+    assert client.patch("/viagens/1/status", json=corpo, headers=headers_cliente).status_code == 403

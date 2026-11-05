@@ -11,6 +11,10 @@ class ViagemCreate(BaseModel):
     data_saida: datetime
 
 
+class ViagemStatusUpdate(BaseModel):
+    status: StatusViagem
+
+
 class ViagemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
