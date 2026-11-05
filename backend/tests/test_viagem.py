@@ -606,3 +606,61 @@ def test_detalhe_de_viagem_inexistente_retorna_404(client, headers_empresa):
 def test_detalhe_da_viagem_exige_empresa_logada(client, headers_cliente):
     assert client.get("/viagens/1").status_code == 401
     assert client.get("/viagens/1", headers=headers_cliente).status_code == 403
+
+
+# ---------- T5.8: GET /viagens/{id}/encomendas ----------
+
+
+def test_lista_apenas_as_encomendas_associadas_a_viagem(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    outra_viagem = _criar_viagem_api(client, headers_empresa)
+    primeira = criar_encomenda_no_banco()
+    segunda = criar_encomenda_no_banco()
+    de_outra = criar_encomenda_no_banco()
+    criar_encomenda_no_banco()  # sem viagem
+    _associar(client, headers_empresa, viagem_id, segunda)
+    _associar(client, headers_empresa, viagem_id, primeira)
+    _associar(client, headers_empresa, outra_viagem, de_outra)
+
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert [e["id"] for e in resposta.json()] == [segunda.id, primeira.id]
+    assert resposta.json()[0]["codigo_rastreio"] == segunda.codigo_rastreio
+    assert resposta.json()[0]["status"] == "pendente"
+
+
+def test_viagem_sem_encomendas_retorna_lista_vazia(client, headers_empresa):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == []
+
+
+def test_viagem_cancelada_continua_listando_suas_encomendas(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    encomenda = criar_encomenda_no_banco()
+    _associar(client, headers_empresa, viagem_id, encomenda)
+    _patch_status(client, headers_empresa, viagem_id, "cancelada")
+
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+
+    assert [(e["id"], e["status"]) for e in resposta.json()] == [(encomenda.id, "imprevisto")]
+
+
+def test_listar_encomendas_de_viagem_inexistente_retorna_404(client, headers_empresa):
+    resposta = client.get("/viagens/999/encomendas", headers=headers_empresa)
+
+    assert resposta.status_code == 404
+    assert resposta.json()["detail"] == "Viagem nao encontrada."
+
+
+def test_listar_encomendas_da_viagem_exige_empresa_logada(client, headers_cliente):
+    assert client.get("/viagens/1/encomendas").status_code == 401
+    assert client.get("/viagens/1/encomendas", headers=headers_cliente).status_code == 403

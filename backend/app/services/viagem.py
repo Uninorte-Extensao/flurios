@@ -126,3 +126,13 @@ def listar_viagens(
         consulta = consulta.filter(Viagem.status == status)
 
     return consulta.order_by(Viagem.data_saida.desc(), Viagem.id.desc()).all()
+
+
+def listar_encomendas_da_viagem(db: Session, viagem_id: int) -> list[Encomenda]:
+    return (
+        db.query(Encomenda)
+        .join(ViagemEncomenda, ViagemEncomenda.encomenda_id == Encomenda.id)
+        .filter(ViagemEncomenda.viagem_id == viagem_id)
+        .order_by(ViagemEncomenda.id)
+        .all()
+    )

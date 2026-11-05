@@ -16,6 +16,7 @@ from app.schemas.viagem import (
 from app.services.encomenda import buscar_encomenda_por_id
 from app.services.embarcacao import buscar_embarcacao_por_id
 from app.schemas.embarcacao import EmbarcacaoOut
+from app.schemas.encomenda import EncomendaOut
 from app.schemas.parada import ParadaOut
 from app.schemas.rota import RotaDetalheOut
 from app.services.parada import listar_paradas_da_rota
@@ -25,6 +26,7 @@ from app.services.viagem import (
     atualizar_status_viagem,
     buscar_viagem_por_id,
     criar_viagem,
+    listar_encomendas_da_viagem,
     listar_viagens,
 )
 
@@ -141,3 +143,18 @@ def obter_viagem(
         ),
         rota=rota,
     )
+
+
+@router.get("/{viagem_id}/encomendas", response_model=list[EncomendaOut])
+def listar_encomendas(
+    viagem_id: int,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    if buscar_viagem_por_id(db, viagem_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada.",
+        )
+
+    return listar_encomendas_da_viagem(db, viagem_id)
