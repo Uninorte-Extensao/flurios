@@ -44,3 +44,13 @@ class ViagemEncomendaOut(BaseModel):
 class ViagemDetalheOut(ViagemOut):
     embarcacao: EmbarcacaoOut
     rota: RotaDetalheOut
+
+
+class LocalizacaoCreate(BaseModel):
+    parada_id: int
+
+
+class LocalizacaoOut(BaseModel):
+    viagem_id: int
+    parada_id: int
+    encomendas_registradas: int

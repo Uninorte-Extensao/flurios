@@ -75,3 +75,7 @@ def atualizar_parada(db: Session, parada: Parada, dados: ParadaUpdate) -> Parada
 def excluir_parada(db: Session, parada: Parada) -> None:
     db.delete(parada)
     db.commit()
+
+
+def buscar_parada_por_id(db: Session, parada_id: int) -> Parada | None:
+    return db.query(Parada).filter(Parada.id == parada_id).first()

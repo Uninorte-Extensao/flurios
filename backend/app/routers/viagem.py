@@ -6,6 +6,8 @@ from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.models.viagem import StatusViagem
 from app.schemas.viagem import (
+    LocalizacaoCreate,
+    LocalizacaoOut,
     ViagemCreate,
     ViagemDetalheOut,
     ViagemEncomendaCreate,
@@ -19,7 +21,7 @@ from app.schemas.embarcacao import EmbarcacaoOut
 from app.schemas.encomenda import EncomendaOut
 from app.schemas.parada import ParadaOut
 from app.schemas.rota import RotaDetalheOut
-from app.services.parada import listar_paradas_da_rota
+from app.services.parada import buscar_parada_por_id, listar_paradas_da_rota
 from app.services.rota import buscar_rota_por_id
 from app.services.viagem import (
     associar_encomenda,
@@ -28,6 +30,7 @@ from app.services.viagem import (
     criar_viagem,
     listar_encomendas_da_viagem,
     listar_viagens,
+    registrar_localizacao,
 )
 
 router = APIRouter(prefix="/viagens", tags=["viagens"])
@@ -158,3 +161,42 @@ def listar_encomendas(
         )
 
     return listar_encomendas_da_viagem(db, viagem_id)
+
+
+@router.post(
+    "/{viagem_id}/localizacao",
+    response_model=LocalizacaoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def registrar_localizacao_da_viagem(
+    viagem_id: int,
+    dados: LocalizacaoCreate,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    viagem = buscar_viagem_por_id(db, viagem_id)
+
+    if viagem is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada.",
+        )
+
+    parada = buscar_parada_por_id(db, dados.parada_id)
+
+    if parada is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parada nao encontrada.",
+        )
+
+    try:
+        registradas = registrar_localizacao(db, viagem, parada)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
+
+    return LocalizacaoOut(
+        viagem_id=viagem.id,
+        parada_id=parada.id,
+        encomendas_registradas=registradas,
+    )

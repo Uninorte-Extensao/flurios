@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
 
 from app.models.encomenda import Encomenda, StatusEncomenda
+from app.models.parada import Parada
 from app.models.viagem import STATUS_VIAGEM_ATIVOS, StatusViagem, Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
 from app.schemas.viagem import ViagemCreate
 from app.services.encomenda import atualizar_status_encomenda
+from app.services.movimentacao import registrar_movimentacao
 
 # Fluxo linear: concluida e cancelada sao estados finais.
 TRANSICOES_VIAGEM = {
@@ -13,6 +15,11 @@ TRANSICOES_VIAGEM = {
     StatusViagem.CONCLUIDA: set(),
     StatusViagem.CANCELADA: set(),
 }
+
+MENSAGEM_VIAGEM_NAO_EM_ANDAMENTO = (
+    "So e possivel registrar localizacao em viagem em andamento."
+)
+MENSAGEM_PARADA_FORA_DA_ROTA = "A parada nao pertence a rota da viagem."
 
 MENSAGEM_VIAGEM_NAO_ATIVA = (
     "So e possivel associar encomendas a viagens programadas ou em andamento."
@@ -140,3 +147,54 @@ def listar_encomendas_da_viagem(db: Session, viagem_id: int) -> list[Encomenda]:
         .order_by(ViagemEncomenda.id)
         .all()
     )
+
+
+def registrar_localizacao(db: Session, viagem: Viagem, parada: Parada) -> int:
+    """Registra que a viagem chegou a uma parada da sua rota.
+
+    Para cada encomenda da viagem que esta a bordo (embarcada ou em_transito)
+    grava uma movimentacao com a parada e a viagem. Encomendas embarcadas
+    passam a em_transito. Tudo no mesmo commit. Retorna quantas encomendas
+    receberam o registro.
+    """
+    if viagem.status != StatusViagem.EM_ANDAMENTO:
+        raise ValueError(MENSAGEM_VIAGEM_NAO_EM_ANDAMENTO)
+
+    if parada.rota_id != viagem.rota_id:
+        raise ValueError(MENSAGEM_PARADA_FORA_DA_ROTA)
+
+    a_bordo = (
+        db.query(Encomenda)
+        .join(ViagemEncomenda, ViagemEncomenda.encomenda_id == Encomenda.id)
+        .filter(
+            ViagemEncomenda.viagem_id == viagem.id,
+            Encomenda.status.in_(
+                [StatusEncomenda.EMBARCADA, StatusEncomenda.EM_TRANSITO]
+            ),
+        )
+        .order_by(Encomenda.id)
+        .all()
+    )
+
+    for encomenda in a_bordo:
+        if encomenda.status == StatusEncomenda.EMBARCADA:
+            atualizar_status_encomenda(
+                db,
+                encomenda,
+                StatusEncomenda.EM_TRANSITO,
+                commit=False,
+                viagem_id=viagem.id,
+                parada_id=parada.id,
+            )
+        else:
+            registrar_movimentacao(
+                db,
+                encomenda.id,
+                encomenda.status,
+                viagem_id=viagem.id,
+                parada_id=parada.id,
+            )
+
+    db.commit()
+
+    return len(a_bordo)
