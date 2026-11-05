@@ -5,6 +5,7 @@ from app.models.cliente import Cliente
 from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda, StatusEncomenda
 from app.schemas.encomenda import EncomendaCreate
+from app.services.movimentacao import registrar_movimentacao
 
 MAX_TENTATIVAS_CODIGO = 10
 
@@ -49,8 +50,23 @@ def atualizar_status_encomenda(
     encomenda: Encomenda,
     novo_status: StatusEncomenda,
     commit: bool = True,
+    viagem_id: int | None = None,
+    parada_id: int | None = None,
 ) -> Encomenda:
-    encomenda.status = novo_status
+    """Muda o status e registra a movimentacao correspondente.
+
+    Status e movimentacao sao gravados no mesmo commit. Se o status nao
+    mudou, nada e registrado. Com commit=False, quem chama fecha a transacao.
+    """
+    if encomenda.status != novo_status:
+        encomenda.status = novo_status
+        registrar_movimentacao(
+            db,
+            encomenda.id,
+            novo_status,
+            viagem_id=viagem_id,
+            parada_id=parada_id,
+        )
 
     if commit:
         db.commit()
@@ -83,6 +99,8 @@ def criar_encomenda(
     )
 
     db.add(nova_encomenda)
+    db.flush()
+    registrar_movimentacao(db, nova_encomenda.id, nova_encomenda.status)
     db.commit()
     db.refresh(nova_encomenda)
 

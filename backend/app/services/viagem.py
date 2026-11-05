@@ -112,7 +112,11 @@ def marcar_encomendas_como_imprevisto(db: Session, viagem: Viagem) -> None:
 
     for encomenda in encomendas:
         atualizar_status_encomenda(
-            db, encomenda, StatusEncomenda.IMPREVISTO, commit=False
+            db,
+            encomenda,
+            StatusEncomenda.IMPREVISTO,
+            commit=False,
+            viagem_id=viagem.id,
         )
 
 
