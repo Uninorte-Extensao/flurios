@@ -7,6 +7,7 @@ from app.models.empresa import Empresa
 from app.models.viagem import StatusViagem
 from app.schemas.viagem import (
     ViagemCreate,
+    ViagemDetalheOut,
     ViagemEncomendaCreate,
     ViagemEncomendaOut,
     ViagemOut,
@@ -14,6 +15,10 @@ from app.schemas.viagem import (
 )
 from app.services.encomenda import buscar_encomenda_por_id
 from app.services.embarcacao import buscar_embarcacao_por_id
+from app.schemas.embarcacao import EmbarcacaoOut
+from app.schemas.parada import ParadaOut
+from app.schemas.rota import RotaDetalheOut
+from app.services.parada import listar_paradas_da_rota
 from app.services.rota import buscar_rota_por_id
 from app.services.viagem import (
     associar_encomenda,
@@ -108,3 +113,31 @@ def listar(
     db: Session = Depends(get_db),
 ):
     return listar_viagens(db, status_viagem)
+
+
+@router.get("/{viagem_id}", response_model=ViagemDetalheOut)
+def obter_viagem(
+    viagem_id: int,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    viagem = buscar_viagem_por_id(db, viagem_id)
+
+    if viagem is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada.",
+        )
+
+    rota = RotaDetalheOut.model_validate(buscar_rota_por_id(db, viagem.rota_id))
+    rota.paradas = [
+        ParadaOut.model_validate(p) for p in listar_paradas_da_rota(db, viagem.rota_id)
+    ]
+
+    return ViagemDetalheOut(
+        **ViagemOut.model_validate(viagem).model_dump(),
+        embarcacao=EmbarcacaoOut.model_validate(
+            buscar_embarcacao_por_id(db, viagem.embarcacao_id)
+        ),
+        rota=rota,
+    )
