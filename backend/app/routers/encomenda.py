@@ -1,15 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import cliente_logado, empresa_logado
+from app.core.deps import cliente_logado, empresa_logado, usuario_logado
 from app.db.session import get_db
 from app.models.cliente import Cliente
 from app.models.empresa import Empresa
+from app.models.usuario import Usuario
+from app.schemas.movimentacao import RastreioOut
+from app.services.cliente import buscar_cliente_por_usuario
+from app.services.empresa import buscar_empresa_por_usuario
+from app.services.movimentacao import listar_historico_da_encomenda
 from app.schemas.encomenda import EncomendaCreate, EncomendaOut, EncomendaStatusUpdate
 from app.services.destinatario import buscar_destinatario_do_cliente
 from app.services.encomenda import (
     atualizar_status_encomenda,
     buscar_encomenda_do_cliente,
+    buscar_encomenda_por_codigo,
     buscar_encomenda_por_id,
     criar_encomenda,
     listar_encomendas_do_cliente,
@@ -58,6 +64,39 @@ def buscar_encomenda(
         )
 
     return encomenda
+
+
+@router.get("/{codigo}/rastreio", response_model=RastreioOut)
+def rastrear_encomenda(
+    codigo: str,
+    usuario: Usuario = Depends(usuario_logado),
+    db: Session = Depends(get_db),
+):
+    """Historico completo. Empresa ve qualquer codigo; cliente, so os seus."""
+    if buscar_empresa_por_usuario(db, usuario.id) is not None:
+        encomenda = buscar_encomenda_por_codigo(db, codigo)
+    else:
+        cliente = buscar_cliente_por_usuario(db, usuario.id)
+
+        if cliente is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario sem cadastro de cliente ou empresa.",
+            )
+
+        encomenda = buscar_encomenda_do_cliente(db, codigo, cliente.id)
+
+    if encomenda is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encomenda nao encontrada.",
+        )
+
+    return RastreioOut(
+        codigo_rastreio=encomenda.codigo_rastreio,
+        status_atual=encomenda.status,
+        historico=listar_historico_da_encomenda(db, encomenda.id),
+    )
 
 
 @router.patch("/{encomenda_id}/status", response_model=EncomendaOut)
