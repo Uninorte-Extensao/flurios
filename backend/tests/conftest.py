@@ -88,8 +88,10 @@ def criar_encomenda_no_banco(db_session):
     """Fabrica de encomendas gravadas direto no banco (sem passar pela API).
 
     Cria um cliente e um destinatario na primeira chamada e os reaproveita.
+    Cada encomenda ja nasce com a movimentacao do seu status inicial.
     """
     from app.models.encomenda import Encomenda, StatusEncomenda
+    from app.models.movimentacao import Movimentacao
     from app.schemas.cliente import ClienteCreate
     from app.schemas.destinatario import DestinatarioCreate
     from app.schemas.usuario import UsuarioCreate
@@ -132,6 +134,8 @@ def criar_encomenda_no_banco(db_session):
             status=status,
         )
         db_session.add(encomenda)
+        db_session.flush()
+        db_session.add(Movimentacao(encomenda_id=encomenda.id, status=status))
         db_session.commit()
         db_session.refresh(encomenda)
 
