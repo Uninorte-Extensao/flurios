@@ -114,3 +114,15 @@ def marcar_encomendas_como_imprevisto(db: Session, viagem: Viagem) -> None:
         atualizar_status_encomenda(
             db, encomenda, StatusEncomenda.IMPREVISTO, commit=False
         )
+
+
+def listar_viagens(
+    db: Session,
+    status: StatusViagem | None = None,
+) -> list[Viagem]:
+    consulta = db.query(Viagem)
+
+    if status is not None:
+        consulta = consulta.filter(Viagem.status == status)
+
+    return consulta.order_by(Viagem.data_saida.desc(), Viagem.id.desc()).all()

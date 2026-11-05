@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import empresa_logado
 from app.db.session import get_db
 from app.models.empresa import Empresa
+from app.models.viagem import StatusViagem
 from app.schemas.viagem import (
     ViagemCreate,
     ViagemEncomendaCreate,
@@ -19,6 +20,7 @@ from app.services.viagem import (
     atualizar_status_viagem,
     buscar_viagem_por_id,
     criar_viagem,
+    listar_viagens,
 )
 
 router = APIRouter(prefix="/viagens", tags=["viagens"])
@@ -97,3 +99,12 @@ def atualizar_status(
         return atualizar_status_viagem(db, viagem, dados.status)
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
+
+
+@router.get("", response_model=list[ViagemOut])
+def listar(
+    status_viagem: StatusViagem | None = Query(default=None, alias="status"),
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    return listar_viagens(db, status_viagem)

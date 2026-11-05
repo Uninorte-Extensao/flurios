@@ -518,3 +518,51 @@ def test_encomenda_imprevisto_pode_ser_realocada_em_outra_viagem(
 
     db_session.refresh(encomenda)
     assert encomenda.status == StatusEncomenda.IMPREVISTO
+
+
+# ---------- T5.6: GET /viagens (filtro por status) ----------
+
+
+def test_lista_vazia_quando_nao_ha_viagens(client, headers_empresa):
+    resposta = client.get("/viagens", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == []
+
+
+def test_lista_todas_as_viagens_da_mais_recente_para_a_mais_antiga(client, headers_empresa):
+    antiga = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-01T08:00:00")
+    recente = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-20T08:00:00")
+    meio = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-10T08:00:00")
+
+    resposta = client.get("/viagens", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert [v["id"] for v in resposta.json()] == [recente, meio, antiga]
+
+
+def test_filtra_viagens_por_status(client, headers_empresa):
+    programada = _criar_viagem_api(client, headers_empresa)
+    em_andamento = _criar_viagem_api(client, headers_empresa)
+    cancelada = _criar_viagem_api(client, headers_empresa)
+    _patch_status(client, headers_empresa, em_andamento, "em_andamento")
+    _patch_status(client, headers_empresa, cancelada, "cancelada")
+
+    def ids(filtro):
+        resposta = client.get(f"/viagens?status={filtro}", headers=headers_empresa)
+        assert resposta.status_code == 200
+        return {v["id"] for v in resposta.json()}
+
+    assert ids("programada") == {programada}
+    assert ids("em_andamento") == {em_andamento}
+    assert ids("cancelada") == {cancelada}
+    assert ids("concluida") == set()
+
+
+def test_filtro_com_status_invalido_retorna_422(client, headers_empresa):
+    assert client.get("/viagens?status=voando", headers=headers_empresa).status_code == 422
+
+
+def test_listagem_de_viagens_exige_empresa_logada(client, headers_cliente):
+    assert client.get("/viagens").status_code == 401
+    assert client.get("/viagens", headers=headers_cliente).status_code == 403
