@@ -20,3 +20,16 @@ class ViagemOut(BaseModel):
     data_saida: datetime
     status: StatusViagem
     criado_em: datetime
+
+
+class ViagemEncomendaCreate(BaseModel):
+    encomenda_id: int
+
+
+class ViagemEncomendaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    viagem_id: int
+    encomenda_id: int
+    criado_em: datetime
