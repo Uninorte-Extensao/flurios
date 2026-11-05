@@ -5,6 +5,14 @@ from app.models.viagem import STATUS_VIAGEM_ATIVOS, StatusViagem, Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
 from app.schemas.viagem import ViagemCreate
 
+# Fluxo linear: concluida e cancelada sao estados finais.
+TRANSICOES_VIAGEM = {
+    StatusViagem.PROGRAMADA: {StatusViagem.EM_ANDAMENTO, StatusViagem.CANCELADA},
+    StatusViagem.EM_ANDAMENTO: {StatusViagem.CONCLUIDA, StatusViagem.CANCELADA},
+    StatusViagem.CONCLUIDA: set(),
+    StatusViagem.CANCELADA: set(),
+}
+
 MENSAGEM_VIAGEM_NAO_ATIVA = (
     "So e possivel associar encomendas a viagens programadas ou em andamento."
 )
@@ -60,3 +68,21 @@ def associar_encomenda(
     db.refresh(vinculo)
 
     return vinculo
+
+
+def atualizar_status_viagem(
+    db: Session,
+    viagem: Viagem,
+    novo_status: StatusViagem,
+) -> Viagem:
+    if novo_status not in TRANSICOES_VIAGEM[viagem.status]:
+        raise ValueError(
+            f"Transicao de status invalida: {viagem.status.value} -> {novo_status.value}."
+        )
+
+    viagem.status = novo_status
+
+    db.commit()
+    db.refresh(viagem)
+
+    return viagem
