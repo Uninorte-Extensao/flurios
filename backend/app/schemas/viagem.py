@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from app.models.viagem import StatusViagem
+from app.schemas.embarcacao import EmbarcacaoOut
+from app.schemas.rota import RotaDetalheOut
 
 
 class ViagemCreate(BaseModel):
@@ -37,3 +39,8 @@ class ViagemEncomendaOut(BaseModel):
     viagem_id: int
     encomenda_id: int
     criado_em: datetime
+
+
+class ViagemDetalheOut(ViagemOut):
+    embarcacao: EmbarcacaoOut
+    rota: RotaDetalheOut

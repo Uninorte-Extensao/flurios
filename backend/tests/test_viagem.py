@@ -566,3 +566,43 @@ def test_filtro_com_status_invalido_retorna_422(client, headers_empresa):
 def test_listagem_de_viagens_exige_empresa_logada(client, headers_cliente):
     assert client.get("/viagens").status_code == 401
     assert client.get("/viagens", headers=headers_cliente).status_code == 403
+
+
+# ---------- T5.7: GET /viagens/{id} ----------
+
+
+def test_detalhe_da_viagem_traz_embarcacao_e_rota_com_paradas(client, headers_empresa):
+    dados = _dados_viagem(client, headers_empresa)
+    for nome, ordem in [("Parintins", 2), ("Manaus", 1)]:
+        client.post(
+            f"/rotas/{dados['rota_id']}/paradas",
+            json={"nome": nome, "ordem": ordem},
+            headers=headers_empresa,
+        )
+    viagem_id = client.post("/viagens", json=dados, headers=headers_empresa).json()["id"]
+
+    resposta = client.get(f"/viagens/{viagem_id}", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["id"] == viagem_id
+    assert corpo["status"] == "programada"
+    assert corpo["data_saida"] == "2026-12-01T08:00:00"
+    assert corpo["embarcacao"]["id"] == dados["embarcacao_id"]
+    assert corpo["embarcacao"]["nome"] == "Rio Negro I"
+    assert corpo["embarcacao"]["capacidade"] == 120
+    assert corpo["rota"]["id"] == dados["rota_id"]
+    assert corpo["rota"]["nome"] == "Manaus - Parintins"
+    assert [p["nome"] for p in corpo["rota"]["paradas"]] == ["Manaus", "Parintins"]
+
+
+def test_detalhe_de_viagem_inexistente_retorna_404(client, headers_empresa):
+    resposta = client.get("/viagens/999", headers=headers_empresa)
+
+    assert resposta.status_code == 404
+    assert resposta.json()["detail"] == "Viagem nao encontrada."
+
+
+def test_detalhe_da_viagem_exige_empresa_logada(client, headers_cliente):
+    assert client.get("/viagens/1").status_code == 401
+    assert client.get("/viagens/1", headers=headers_cliente).status_code == 403
