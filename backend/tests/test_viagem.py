@@ -4,6 +4,7 @@ import pytest
 from sqlalchemy.exc import StatementError
 
 from app.models.embarcacao import Embarcacao
+from app.models.encomenda import StatusEncomenda
 from app.models.rota import Rota
 from app.models.viagem import StatusViagem, Viagem
 
@@ -390,3 +391,130 @@ def test_atualizar_status_da_viagem_exige_empresa_logada(client, headers_cliente
 
     assert client.patch("/viagens/1/status", json=corpo).status_code == 401
     assert client.patch("/viagens/1/status", json=corpo, headers=headers_cliente).status_code == 403
+
+
+# ---------- T5.5: cancelamento -> encomendas viram imprevisto ----------
+
+
+def _associar(client, headers, viagem_id, encomenda):
+    resposta = client.post(
+        f"/viagens/{viagem_id}/encomendas",
+        json={"encomenda_id": encomenda.id},
+        headers=headers,
+    )
+    assert resposta.status_code == 201
+
+
+def test_cancelar_viagem_marca_encomendas_associadas_como_imprevisto(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    encomendas = [
+        criar_encomenda_no_banco(StatusEncomenda.PENDENTE),
+        criar_encomenda_no_banco(StatusEncomenda.EMBARCADA),
+        criar_encomenda_no_banco(StatusEncomenda.EM_TRANSITO),
+    ]
+    for encomenda in encomendas:
+        _associar(client, headers_empresa, viagem_id, encomenda)
+
+    resposta = _patch_status(client, headers_empresa, viagem_id, "cancelada")
+
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == "cancelada"
+    db_session.expire_all()
+    assert [e.status for e in encomendas] == [StatusEncomenda.IMPREVISTO] * 3
+
+
+def test_cancelar_viagem_em_andamento_tambem_marca_imprevisto(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.EM_TRANSITO)
+    _associar(client, headers_empresa, viagem_id, encomenda)
+    _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+
+    assert _patch_status(client, headers_empresa, viagem_id, "cancelada").status_code == 200
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.IMPREVISTO
+
+
+def test_cancelar_viagem_nao_altera_encomenda_ja_entregue(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    entregue = criar_encomenda_no_banco(StatusEncomenda.ENTREGUE)
+    pendente = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
+    _associar(client, headers_empresa, viagem_id, entregue)
+    _associar(client, headers_empresa, viagem_id, pendente)
+
+    _patch_status(client, headers_empresa, viagem_id, "cancelada")
+
+    db_session.expire_all()
+    assert entregue.status == StatusEncomenda.ENTREGUE
+    assert pendente.status == StatusEncomenda.IMPREVISTO
+
+
+def test_cancelar_viagem_nao_afeta_encomendas_de_outras_viagens_nem_sem_viagem(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_cancelada = _criar_viagem_api(client, headers_empresa)
+    outra_viagem = _criar_viagem_api(client, headers_empresa)
+    da_cancelada = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+    da_outra = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+    sem_viagem = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+    _associar(client, headers_empresa, viagem_cancelada, da_cancelada)
+    _associar(client, headers_empresa, outra_viagem, da_outra)
+
+    _patch_status(client, headers_empresa, viagem_cancelada, "cancelada")
+
+    db_session.expire_all()
+    assert da_cancelada.status == StatusEncomenda.IMPREVISTO
+    assert da_outra.status == StatusEncomenda.RECEBIDA
+    assert sem_viagem.status == StatusEncomenda.RECEBIDA
+
+
+@pytest.mark.parametrize("novo_status", ["em_andamento", "concluida"])
+def test_outras_transicoes_nao_alteram_status_das_encomendas(
+    client, db_session, headers_empresa, criar_encomenda_no_banco, novo_status
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
+    _associar(client, headers_empresa, viagem_id, encomenda)
+    if novo_status == "concluida":
+        _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+
+    assert _patch_status(client, headers_empresa, viagem_id, novo_status).status_code == 200
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.EMBARCADA
+
+
+def test_cancelamento_invalido_nao_altera_encomendas(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_empresa)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
+    _associar(client, headers_empresa, viagem_id, encomenda)
+    _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+    _patch_status(client, headers_empresa, viagem_id, "concluida")
+
+    assert _patch_status(client, headers_empresa, viagem_id, "cancelada").status_code == 409
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.EMBARCADA
+
+
+def test_encomenda_imprevisto_pode_ser_realocada_em_outra_viagem(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    viagem_cancelada = _criar_viagem_api(client, headers_empresa)
+    nova_viagem = _criar_viagem_api(client, headers_empresa)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+    _associar(client, headers_empresa, viagem_cancelada, encomenda)
+    _patch_status(client, headers_empresa, viagem_cancelada, "cancelada")
+
+    _associar(client, headers_empresa, nova_viagem, encomenda)
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.IMPREVISTO

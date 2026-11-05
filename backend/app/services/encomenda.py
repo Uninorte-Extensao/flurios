@@ -48,11 +48,13 @@ def atualizar_status_encomenda(
     db: Session,
     encomenda: Encomenda,
     novo_status: StatusEncomenda,
+    commit: bool = True,
 ) -> Encomenda:
     encomenda.status = novo_status
 
-    db.commit()
-    db.refresh(encomenda)
+    if commit:
+        db.commit()
+        db.refresh(encomenda)
 
     return encomenda
 
