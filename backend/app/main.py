@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import cliente, destinatario, embarcacao, empresa, encomenda, rota, usuario
+from app.routers import cliente, destinatario, embarcacao, empresa, encomenda, rota, usuario, viagem
 
 
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(destinatario.router)
 app.include_router(encomenda.router)
 app.include_router(embarcacao.router)
 app.include_router(rota.router)
+app.include_router(viagem.router)
 
 
 @app.get("/health")
