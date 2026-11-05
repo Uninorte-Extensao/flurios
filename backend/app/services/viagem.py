@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 
-from app.models.encomenda import Encomenda
+from app.models.encomenda import Encomenda, StatusEncomenda
 from app.models.viagem import STATUS_VIAGEM_ATIVOS, StatusViagem, Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
 from app.schemas.viagem import ViagemCreate
+from app.services.encomenda import atualizar_status_encomenda
 
 # Fluxo linear: concluida e cancelada sao estados finais.
 TRANSICOES_VIAGEM = {
@@ -82,7 +83,34 @@ def atualizar_status_viagem(
 
     viagem.status = novo_status
 
+    if novo_status == StatusViagem.CANCELADA:
+        marcar_encomendas_como_imprevisto(db, viagem)
+
     db.commit()
     db.refresh(viagem)
 
     return viagem
+
+
+def marcar_encomendas_como_imprevisto(db: Session, viagem: Viagem) -> None:
+    """Passa para imprevisto as encomendas da viagem cancelada.
+
+    Encomendas ja entregues nao sao alteradas. Nao faz commit: roda na mesma
+    transacao do cancelamento, para que viagem e encomendas mudem juntas.
+    """
+    encomendas = (
+        db.query(Encomenda)
+        .join(ViagemEncomenda, ViagemEncomenda.encomenda_id == Encomenda.id)
+        .filter(
+            ViagemEncomenda.viagem_id == viagem.id,
+            Encomenda.status.notin_(
+                [StatusEncomenda.ENTREGUE, StatusEncomenda.IMPREVISTO]
+            ),
+        )
+        .all()
+    )
+
+    for encomenda in encomendas:
+        atualizar_status_encomenda(
+            db, encomenda, StatusEncomenda.IMPREVISTO, commit=False
+        )
