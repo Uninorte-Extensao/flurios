@@ -73,6 +73,10 @@ def remover_embarcacao(
     db: Session = Depends(get_db),
 ):
     embarcacao = _embarcacao_ou_404(db, embarcacao_id)
-    excluir_embarcacao(db, embarcacao)
+
+    try:
+        excluir_embarcacao(db, embarcacao)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

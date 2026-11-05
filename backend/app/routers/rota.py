@@ -97,7 +97,10 @@ def remover_rota(
     empresa: Empresa = Depends(empresa_logado),
     db: Session = Depends(get_db),
 ):
-    excluir_rota(db, _rota_ou_404(db, rota_id))
+    try:
+        excluir_rota(db, _rota_ou_404(db, rota_id))
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
