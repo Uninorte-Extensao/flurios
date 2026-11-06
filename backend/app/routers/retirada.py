@@ -51,6 +51,7 @@ def retirar_encomenda(
     return RetiradaOut(
         id=retirada.id,
         encomenda_id=retirada.encomenda_id,
+        cpf_retirante=retirada.cpf_retirante,
         termo_aceito=retirada.termo_aceito,
         status_encomenda=encomenda.status,
         criado_em=retirada.criado_em,

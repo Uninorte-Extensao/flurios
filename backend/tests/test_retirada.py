@@ -241,3 +241,48 @@ def test_cpf_nao_vai_para_o_log(
 
     assert CPF_AUTORIZADO not in caplog.text
     assert CPF_OUTRO not in caplog.text
+
+
+def test_resposta_da_retirada_traz_cpf_mascarado_e_nunca_o_completo(
+    client, db_session, headers_empresa, criar_encomenda_no_banco
+):
+    encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
+
+    resposta = _retirar(client, headers_empresa, encomenda, cpf="111.222.333-96")
+
+    assert resposta.status_code == 201
+    assert resposta.json()["cpf_retirante"] == "111.***.***-96"
+    assert CPF_AUTORIZADO not in resposta.text
+    assert "111.222.333-96" not in resposta.text
+    assert db_session.query(Retirada).one().cpf_retirante == CPF_AUTORIZADO
+
+
+def test_schema_retirada_out_mascara_cpf_completo_vindo_do_banco():
+    from app.schemas.retirada import RetiradaOut
+
+    base = {
+        "id": 1,
+        "encomenda_id": 1,
+        "termo_aceito": True,
+        "status_encomenda": "entregue",
+        "criado_em": "2026-11-05T10:00:00",
+    }
+
+    assert RetiradaOut(**base, cpf_retirante=CPF_AUTORIZADO).cpf_retirante == "111.***.***-96"
+    assert RetiradaOut(**base, cpf_retirante="111.***.***-96").cpf_retirante == "111.***.***-96"
+    assert RetiradaOut(**base, cpf_retirante="formato estranho").cpf_retirante == "***.***.***-**"
+
+
+def test_json_do_schema_retirada_out_nao_contem_cpf_completo():
+    from app.schemas.retirada import RetiradaOut
+
+    saida = RetiradaOut(
+        id=1,
+        encomenda_id=1,
+        cpf_retirante=CPF_AUTORIZADO,
+        termo_aceito=True,
+        status_encomenda="entregue",
+        criado_em="2026-11-05T10:00:00",
+    )
+
+    assert CPF_AUTORIZADO not in saida.model_dump_json()
