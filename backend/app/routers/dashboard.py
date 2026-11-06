@@ -8,10 +8,13 @@ from app.models.viagem import StatusViagem
 from app.schemas.dashboard import (
     EncomendasPorMunicipioOut,
     MunicipioContagemOut,
+    OcupacaoOut,
+    OcupacaoViagemOut,
     ResumoEncomendasOut,
     ResumoViagensOut,
 )
 from app.services.dashboard import (
+    calcular_ocupacao_viagens_em_andamento,
     contar_encomendas_por_municipio,
     contar_encomendas_por_status,
     contar_viagens_por_status,
@@ -58,3 +61,16 @@ def encomendas_por_municipio(
         total=sum(m.total for m in municipios),
         municipios=municipios,
     )
+
+
+@router.get("/ocupacao", response_model=OcupacaoOut)
+def ocupacao_das_viagens(
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    viagens = [
+        OcupacaoViagemOut(**linha)
+        for linha in calcular_ocupacao_viagens_em_andamento(db)
+    ]
+
+    return OcupacaoOut(total=len(viagens), viagens=viagens)
