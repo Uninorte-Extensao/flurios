@@ -6,6 +6,8 @@ from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.models.viagem import StatusViagem
 from app.schemas.dashboard import (
+    EnvioAtivoOut,
+    EnviosAtivosOut,
     EncomendasPorMunicipioOut,
     MunicipioContagemOut,
     OcupacaoOut,
@@ -18,6 +20,7 @@ from app.services.dashboard import (
     contar_encomendas_por_municipio,
     contar_encomendas_por_status,
     contar_viagens_por_status,
+    listar_envios_ativos,
 )
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -74,3 +77,13 @@ def ocupacao_das_viagens(
     ]
 
     return OcupacaoOut(total=len(viagens), viagens=viagens)
+
+
+@router.get("/envios-ativos", response_model=EnviosAtivosOut)
+def envios_ativos(
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    envios = [EnvioAtivoOut(**linha) for linha in listar_envios_ativos(db)]
+
+    return EnviosAtivosOut(total=len(envios), envios=envios)
