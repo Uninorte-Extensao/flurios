@@ -156,3 +156,78 @@ def test_usuario_logado_com_usuario_inexistente_levanta_401(db_session):
         usuario_logado(token=token, db=db_session)
 
     assert excinfo.value.status_code == 401
+
+
+def test_me_sem_token_retorna_401(client):
+    response = client.get("/usuarios/me")
+
+    assert response.status_code == 401
+
+
+def test_me_cliente(client, headers_cliente):
+    response = client.get("/usuarios/me", headers=headers_cliente)
+
+    assert response.status_code == 200
+    corpo = response.json()
+    assert corpo["tipo"] == "cliente"
+    assert corpo["perfil"] is None
+    assert corpo["nome"] == "Maria"
+    assert corpo["email"] == "maria@teste.com"
+
+
+def test_me_empresa_devolve_perfil(client, headers_empresa):
+    response = client.get("/usuarios/me", headers=headers_empresa)
+
+    assert response.status_code == 200
+    corpo = response.json()
+    assert corpo["tipo"] == "empresa"
+    assert corpo["perfil"] == "operador_embarcacao"
+
+
+def test_me_usuario_sem_cadastro_completo(client, db_session):
+    usuario = criar_usuario(
+        db_session,
+        UsuarioCreate(nome="Novo", email="novo@teste.com", senha="123456"),
+    )
+    token = criar_token_acesso({"sub": str(usuario.id)})
+
+    response = client.get("/usuarios/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json()["tipo"] is None
+    assert response.json()["perfil"] is None
+
+
+def test_me_nao_expoe_dados_sensiveis(client, headers_cliente):
+    corpo = client.get("/usuarios/me", headers=headers_cliente).json()
+
+    assert "senha_hash" not in corpo
+    assert "senha" not in corpo
+    assert "cpf" not in corpo
+    assert "11122233396" not in str(corpo)
+
+
+def test_cors_libera_origem_do_frontend(client):
+    response = client.options(
+        "/usuarios/login",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_cors_nao_libera_origem_desconhecida(client):
+    response = client.options(
+        "/usuarios/login",
+        headers={
+            "Origin": "http://site-qualquer.com",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+
+    assert "access-control-allow-origin" not in response.headers
