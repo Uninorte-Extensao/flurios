@@ -59,6 +59,12 @@ cd backend
 .venv\Scripts\python -m pytest tests -v
 ```
 
+### Dashboard
+
+Endpoints somente leitura em `/dashboard/*`, restritos a usuarios da empresa.
+
+**Ocupacao (`GET /dashboard/ocupacao`)**: a `capacidade` da embarcacao e tratada como **numero de encomendas** (nao peso nem volume). A ocupacao de cada viagem em andamento e `encomendas ativas associadas / capacidade` (ex.: `0.375` = 37,5%). Encomenda "ativa" e a que esta associada a viagem e **nao** esta `entregue` nem em `imprevisto`. O valor pode passar de `1.0` se houver mais encomendas que a capacidade.
+
 ## Frontend
 
 ```

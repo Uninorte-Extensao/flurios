@@ -166,3 +166,122 @@ def test_municipios_conta_e_ordena_do_maior_para_o_menor(
         {"municipio": "Coari", "total": 2},
         {"municipio": "Tefe", "total": 1},
     ]
+
+
+def _viagem_com_encomendas(db_session, criar_encomenda_no_banco, status_viagem, capacidade, status_encomendas, nome="Rio Negro I"):
+    from datetime import datetime
+
+    from app.models.embarcacao import Embarcacao
+    from app.models.rota import Rota
+    from app.models.viagem import Viagem
+    from app.models.viagem_encomenda import ViagemEncomenda
+
+    embarcacao = Embarcacao(nome=nome, capacidade=capacidade)
+    rota = Rota(nome="Manaus - Parintins")
+    db_session.add_all([embarcacao, rota])
+    db_session.flush()
+    viagem = Viagem(
+        embarcacao_id=embarcacao.id,
+        rota_id=rota.id,
+        data_saida=datetime(2026, 12, 1, 8, 0),
+        status=status_viagem,
+    )
+    db_session.add(viagem)
+    db_session.flush()
+
+    for status in status_encomendas:
+        encomenda = criar_encomenda_no_banco(status)
+        db_session.add(ViagemEncomenda(viagem_id=viagem.id, encomenda_id=encomenda.id))
+    db_session.commit()
+
+    return viagem
+
+
+def test_ocupacao_exige_autenticacao(client):
+    assert client.get("/dashboard/ocupacao").status_code == 401
+
+
+def test_ocupacao_nega_acesso_a_cliente(client, headers_cliente):
+    assert client.get("/dashboard/ocupacao", headers=headers_cliente).status_code == 403
+
+
+def test_ocupacao_sem_viagens_em_andamento_retorna_lista_vazia(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.models.viagem import StatusViagem
+
+    resposta = client.get("/dashboard/ocupacao", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"total": 0, "viagens": []}
+
+    # viagens que nao estao em andamento tambem ficam de fora
+    _viagem_com_encomendas(
+        db_session, criar_encomenda_no_banco, StatusViagem.PROGRAMADA, 10,
+        [StatusEncomenda.AGUARDANDO_EMBARQUE],
+    )
+    assert client.get("/dashboard/ocupacao", headers=headers_empresa).json()["total"] == 0
+
+
+def test_ocupacao_conta_apenas_encomendas_ativas(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.models.viagem import StatusViagem
+
+    viagem = _viagem_com_encomendas(
+        db_session, criar_encomenda_no_banco, StatusViagem.EM_ANDAMENTO, 8,
+        [
+            StatusEncomenda.EMBARCADA,
+            StatusEncomenda.EM_TRANSITO,
+            StatusEncomenda.EM_TRANSITO,
+            StatusEncomenda.ENTREGUE,
+            StatusEncomenda.IMPREVISTO,
+        ],
+    )
+
+    corpo = client.get("/dashboard/ocupacao", headers=headers_empresa).json()
+
+    assert corpo["total"] == 1
+    item = corpo["viagens"][0]
+    assert item["viagem_id"] == viagem.id
+    assert item["embarcacao_nome"] == "Rio Negro I"
+    assert item["capacidade"] == 8
+    assert item["encomendas_ativas"] == 3
+    assert item["ocupacao"] == 0.375
+
+
+def test_ocupacao_viagem_sem_encomendas_e_zero(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.models.viagem import StatusViagem
+
+    _viagem_com_encomendas(
+        db_session, criar_encomenda_no_banco, StatusViagem.EM_ANDAMENTO, 50, []
+    )
+
+    item = client.get("/dashboard/ocupacao", headers=headers_empresa).json()["viagens"][0]
+
+    assert item["encomendas_ativas"] == 0
+    assert item["ocupacao"] == 0.0
+
+
+def test_ocupacao_varias_viagens_nao_misturam_contagens(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.models.viagem import StatusViagem
+
+    _viagem_com_encomendas(
+        db_session, criar_encomenda_no_banco, StatusViagem.EM_ANDAMENTO, 4,
+        [StatusEncomenda.EM_TRANSITO, StatusEncomenda.EM_TRANSITO], nome="Barco A",
+    )
+    _viagem_com_encomendas(
+        db_session, criar_encomenda_no_banco, StatusViagem.EM_ANDAMENTO, 10,
+        [StatusEncomenda.EMBARCADA], nome="Barco B",
+    )
+
+    corpo = client.get("/dashboard/ocupacao", headers=headers_empresa).json()
+
+    por_nome = {v["embarcacao_nome"]: v for v in corpo["viagens"]}
+    assert corpo["total"] == 2
+    assert (por_nome["Barco A"]["encomendas_ativas"], por_nome["Barco A"]["ocupacao"]) == (2, 0.5)
+    assert (por_nome["Barco B"]["encomendas_ativas"], por_nome["Barco B"]["ocupacao"]) == (1, 0.1)
