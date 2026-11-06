@@ -41,4 +41,9 @@ Os achados 1 a 4 aparecem nos testes `test_varredura_estatica_...` e `test_varre
 
 ## Correção
 
-Prevista na branch `fix/mascarar-cpf-respostas`: usar `CpfMascarado` em `ClienteOut`, `DestinatarioOut` e `DestinatarioDetalheOut`, remover o mascaramento manual do router, e remover o campo `input` das respostas 422. Os testes que documentam os vazamentos (`xfail`) passam a exigir resposta limpa.
+Aplicada na branch `fix/mascarar-cpf-respostas` (achados 1 a 4):
+
+- `ClienteOut` e `DestinatarioOut` (e, por herança, `DestinatarioDetalheOut`) passam a usar `CpfMascarado`; o mascaramento manual do `GET /destinatarios/{id}` foi removido, pois o schema agora protege qualquer rota.
+- Novo handler (`app/core/erros.py`) para respostas 422: mantém `loc`, `msg` e `type`, mas remove o campo `input`.
+- Os testes de auditoria deixam de ter `xfail` e exigem **zero** campos de CPF sem máscara e **zero** respostas com CPF. Os testes de cliente e destinatário agora esperam o CPF mascarado na resposta e o CPF completo no banco.
+- O achado 5 (enumeração por "CPF ja cadastrado.") permanece como está.

@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, field_validator
 
 from app.core.cpf import normalizar_cpf
+from app.core.mascaramento import CpfMascarado
 
 class DestinatarioCreate(BaseModel):
     nome: str
@@ -20,7 +21,7 @@ class DestinatarioCreate(BaseModel):
 class DestinatarioOut(BaseModel):
     id: int
     nome: str
-    cpf: str
+    cpf: CpfMascarado
     telefone: str
     endereco: str
     municipio: str
@@ -31,4 +32,4 @@ class DestinatarioOut(BaseModel):
 
 
 class DestinatarioDetalheOut(DestinatarioOut):
-    """Mesmo formato de DestinatarioOut, mas com o CPF sempre mascarado."""
+    """Mesmo formato de DestinatarioOut. O CPF sai sempre mascarado (CpfMascarado)."""

@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import cliente_logado
-from app.core.mascaramento import mascarar_cpf
 from app.db.session import get_db
 from app.models.cliente import Cliente
 from app.schemas.destinatario import (
@@ -38,7 +37,4 @@ def obter_destinatario(
             detail="Destinatario nao encontrado.",
         )
 
-    resposta = DestinatarioDetalheOut.model_validate(destinatario)
-    resposta.cpf = mascarar_cpf(resposta.cpf)
-
-    return resposta
+    return destinatario

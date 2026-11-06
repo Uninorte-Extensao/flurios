@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, field_validator
 
 from app.core.cpf import normalizar_cpf
+from app.core.mascaramento import CpfMascarado
 
 class ClienteCreate(BaseModel):
     cpf: str
@@ -17,7 +18,7 @@ class ClienteCreate(BaseModel):
 class ClienteOut(BaseModel):
     id: int
     usuario_id: int
-    cpf: str
+    cpf: CpfMascarado
     telefone: str
     criado_em: datetime
 

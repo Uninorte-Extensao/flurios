@@ -1,4 +1,5 @@
 from app.core.security import criar_token_acesso
+from app.models.cliente import Cliente
 from app.schemas.usuario import UsuarioCreate
 from app.services.usuario import criar_usuario
 
@@ -27,8 +28,10 @@ def test_cadastrar_cliente_sucesso(client, db_session):
 
     assert response.status_code == 201
     corpo = response.json()
-    assert corpo["cpf"] == CPF_VALIDO_1
+    assert corpo["cpf"] == "123.***.***-09"
+    assert CPF_VALIDO_1 not in response.text
     assert corpo["telefone"] == "92999990000"
+    assert db_session.query(Cliente).one().cpf == CPF_VALIDO_1
 
 
 def test_cadastrar_cliente_aceita_cpf_formatado_e_guarda_so_numeros(client, db_session):
@@ -41,7 +44,9 @@ def test_cadastrar_cliente_aceita_cpf_formatado_e_guarda_so_numeros(client, db_s
     )
 
     assert response.status_code == 201
-    assert response.json()["cpf"] == CPF_VALIDO_1
+    assert response.json()["cpf"] == "123.***.***-09"
+    assert "123.456.789-09" not in response.text
+    assert db_session.query(Cliente).one().cpf == CPF_VALIDO_1
 
 
 def test_cadastrar_cliente_cpf_com_digito_verificador_invalido_retorna_422(client, db_session):
