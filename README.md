@@ -65,6 +65,8 @@ Endpoints somente leitura em `/dashboard/*`, restritos a usuarios da empresa.
 
 **Ocupacao (`GET /dashboard/ocupacao`)**: a `capacidade` da embarcacao e tratada como **numero de encomendas** (nao peso nem volume). A ocupacao de cada viagem em andamento e `encomendas ativas associadas / capacidade` (ex.: `0.375` = 37,5%). Encomenda "ativa" e a que esta associada a viagem e **nao** esta `entregue` nem em `imprevisto`. O valor pode passar de `1.0` se houver mais encomendas que a capacidade.
 
+**Envios ativos (`GET /dashboard/envios-ativos`)**: todas as encomendas que nao estao `entregue` (inclui `imprevisto`). Para cada uma: codigo de rastreio, destinatario, municipio de destino, proxima parada, status e progresso. O progresso e a proporcao (0 a 1) das paradas da rota ja registradas na viagem da encomenda (a mais recente nao cancelada); a proxima parada e a primeira da rota, por ordem, ainda nao registrada. Sem viagem (ou com viagem cancelada) o progresso e `0.0` e a proxima parada e `null`.
+
 ## Frontend
 
 ```

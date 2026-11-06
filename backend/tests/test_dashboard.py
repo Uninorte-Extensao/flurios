@@ -285,3 +285,125 @@ def test_ocupacao_varias_viagens_nao_misturam_contagens(
     assert corpo["total"] == 2
     assert (por_nome["Barco A"]["encomendas_ativas"], por_nome["Barco A"]["ocupacao"]) == (2, 0.5)
     assert (por_nome["Barco B"]["encomendas_ativas"], por_nome["Barco B"]["ocupacao"]) == (1, 0.1)
+
+
+def _viagem_com_rota(db_session, status_viagem=None, paradas=("Manaus", "Itacoatiara", "Parintins")):
+    from datetime import datetime
+
+    from app.models.embarcacao import Embarcacao
+    from app.models.parada import Parada
+    from app.models.rota import Rota
+    from app.models.viagem import StatusViagem, Viagem
+
+    embarcacao = Embarcacao(nome="Rio Negro I", capacidade=10)
+    rota = Rota(nome="Manaus - Parintins")
+    db_session.add_all([embarcacao, rota])
+    db_session.flush()
+    lista = [Parada(rota_id=rota.id, nome=n, ordem=i + 1) for i, n in enumerate(paradas)]
+    db_session.add_all(lista)
+    viagem = Viagem(
+        embarcacao_id=embarcacao.id,
+        rota_id=rota.id,
+        data_saida=datetime(2026, 12, 1, 8, 0),
+        status=status_viagem or StatusViagem.EM_ANDAMENTO,
+    )
+    db_session.add(viagem)
+    db_session.commit()
+
+    return viagem, lista
+
+
+def _associar(db_session, viagem, encomenda):
+    from app.models.viagem_encomenda import ViagemEncomenda
+
+    db_session.add(ViagemEncomenda(viagem_id=viagem.id, encomenda_id=encomenda.id))
+    db_session.commit()
+
+
+def test_envios_ativos_exige_autenticacao(client):
+    assert client.get("/dashboard/envios-ativos").status_code == 401
+
+
+def test_envios_ativos_nega_acesso_a_cliente(client, headers_cliente):
+    assert client.get("/dashboard/envios-ativos", headers=headers_cliente).status_code == 403
+
+
+def test_envios_ativos_sem_encomendas_retorna_lista_vazia(client, headers_empresa):
+    resposta = client.get("/dashboard/envios-ativos", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"total": 0, "envios": []}
+
+
+def test_envios_ativos_exclui_entregues_e_conta_corretamente(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
+    criar_encomenda_no_banco(StatusEncomenda.IMPREVISTO)
+    criar_encomenda_no_banco(StatusEncomenda.A_RETIRAR)
+    criar_encomenda_no_banco(StatusEncomenda.ENTREGUE)
+
+    corpo = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()
+
+    assert corpo["total"] == 3
+    assert {e["status"] for e in corpo["envios"]} == {"pendente", "imprevisto", "a_retirar"}
+
+
+def test_envios_ativos_sem_viagem_tem_progresso_zero_e_sem_proxima_parada(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
+
+    envio = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"][0]
+
+    assert envio == {
+        "codigo_rastreio": encomenda.codigo_rastreio,
+        "destinatario": "Joao Pereira",
+        "municipio_destino": "Tefe",
+        "proxima_parada": None,
+        "status": "pendente",
+        "progresso": 0.0,
+    }
+
+
+def test_envios_ativos_calcula_progresso_e_proxima_parada(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.services.viagem import registrar_localizacao
+
+    viagem, paradas = _viagem_com_rota(db_session)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
+    _associar(db_session, viagem, encomenda)
+
+    def _envio():
+        return client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"][0]
+
+    assert (_envio()["progresso"], _envio()["proxima_parada"]) == (0.0, "Manaus")
+
+    registrar_localizacao(db_session, viagem, paradas[0])
+    envio = _envio()
+    assert envio["status"] == "em_transito"
+    assert envio["progresso"] == 0.3333
+    assert envio["proxima_parada"] == "Itacoatiara"
+
+    registrar_localizacao(db_session, viagem, paradas[1])
+    registrar_localizacao(db_session, viagem, paradas[2])
+    envio = _envio()
+    assert envio["progresso"] == 1.0
+    assert envio["proxima_parada"] is None
+
+
+def test_envios_ativos_viagem_cancelada_nao_conta_progresso(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.models.viagem import StatusViagem
+
+    viagem, _ = _viagem_com_rota(db_session, StatusViagem.CANCELADA)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.IMPREVISTO)
+    _associar(db_session, viagem, encomenda)
+
+    envio = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"][0]
+
+    assert envio["status"] == "imprevisto"
+    assert envio["progresso"] == 0.0
+    assert envio["proxima_parada"] is None

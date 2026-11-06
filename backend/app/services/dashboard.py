@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.models.destinatario import Destinatario
 from app.models.embarcacao import Embarcacao
 from app.models.encomenda import Encomenda, StatusEncomenda
+from app.models.movimentacao import Movimentacao
+from app.models.parada import Parada
 from app.models.rota import Rota
 from app.models.viagem import StatusViagem, Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
@@ -89,3 +91,94 @@ def calcular_ocupacao_viagens_em_andamento(db: Session) -> list[dict]:
         }
         for viagem, embarcacao, rota_nome, total in linhas
     ]
+
+
+def listar_envios_ativos(db: Session) -> list[dict]:
+    """Encomendas que ainda nao foram entregues, com a situacao na viagem.
+
+    Viagem da encomenda = a mais recente que nao foi cancelada. Progresso =
+    paradas da rota ja registradas na viagem / total de paradas da rota.
+    Proxima parada = primeira parada (por ordem) ainda nao registrada. Sem
+    viagem (ou sem paradas), progresso 0 e proxima parada nula.
+    """
+    encomendas = (
+        db.query(Encomenda, Destinatario)
+        .join(Destinatario, Destinatario.id == Encomenda.destinatario_id)
+        .filter(Encomenda.status != StatusEncomenda.ENTREGUE)
+        .order_by(Encomenda.id)
+        .all()
+    )
+    if not encomendas:
+        return []
+
+    ids = [e.id for e, _ in encomendas]
+
+    # viagem mais recente (nao cancelada) de cada encomenda
+    viagem_da_encomenda: dict[int, Viagem] = {}
+    vinculos = (
+        db.query(ViagemEncomenda.encomenda_id, Viagem)
+        .join(Viagem, Viagem.id == ViagemEncomenda.viagem_id)
+        .filter(
+            ViagemEncomenda.encomenda_id.in_(ids),
+            Viagem.status != StatusViagem.CANCELADA,
+        )
+        .order_by(ViagemEncomenda.id)
+        .all()
+    )
+    for encomenda_id, viagem in vinculos:
+        viagem_da_encomenda[encomenda_id] = viagem
+
+    viagem_ids = {v.id for v in viagem_da_encomenda.values()}
+    rota_ids = {v.rota_id for v in viagem_da_encomenda.values()}
+
+    paradas_por_rota: dict[int, list[Parada]] = {}
+    if rota_ids:
+        for parada in (
+            db.query(Parada)
+            .filter(Parada.rota_id.in_(rota_ids))
+            .order_by(Parada.rota_id, Parada.ordem)
+            .all()
+        ):
+            paradas_por_rota.setdefault(parada.rota_id, []).append(parada)
+
+    registradas_por_viagem: dict[int, set[int]] = {}
+    if viagem_ids:
+        for viagem_id, parada_id in (
+            db.query(Movimentacao.viagem_id, Movimentacao.parada_id)
+            .filter(
+                Movimentacao.viagem_id.in_(viagem_ids),
+                Movimentacao.parada_id.isnot(None),
+            )
+            .distinct()
+            .all()
+        ):
+            registradas_por_viagem.setdefault(viagem_id, set()).add(parada_id)
+
+    envios = []
+    for encomenda, destinatario in encomendas:
+        proxima = None
+        progresso = 0.0
+        viagem = viagem_da_encomenda.get(encomenda.id)
+
+        if viagem is not None:
+            paradas = paradas_por_rota.get(viagem.rota_id, [])
+            registradas = registradas_por_viagem.get(viagem.id, set())
+            pendentes = [p for p in paradas if p.id not in registradas]
+
+            if paradas:
+                progresso = round((len(paradas) - len(pendentes)) / len(paradas), 4)
+            if pendentes:
+                proxima = pendentes[0].nome
+
+        envios.append(
+            {
+                "codigo_rastreio": encomenda.codigo_rastreio,
+                "destinatario": destinatario.nome,
+                "municipio_destino": destinatario.municipio,
+                "proxima_parada": proxima,
+                "status": encomenda.status,
+                "progresso": progresso,
+            }
+        )
+
+    return envios
