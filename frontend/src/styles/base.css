@@ -140,6 +140,8 @@ textarea {
 }
 
 .campo__entrada {
+  width: 100%;
+  min-width: 0;
   min-height: 42px;
   padding: 0 var(--espaco-3);
   border: 1px solid var(--borda);
