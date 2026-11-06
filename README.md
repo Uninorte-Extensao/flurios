@@ -67,6 +67,8 @@ Endpoints somente leitura em `/dashboard/*`, restritos a usuarios da empresa.
 
 **Envios ativos (`GET /dashboard/envios-ativos`)**: todas as encomendas que nao estao `entregue` (inclui `imprevisto`). Para cada uma: codigo de rastreio, destinatario, municipio de destino, proxima parada, status e progresso. O progresso e a proporcao (0 a 1) das paradas da rota ja registradas na viagem da encomenda (a mais recente nao cancelada); a proxima parada e a primeira da rota, por ordem, ainda nao registrada. Sem viagem (ou com viagem cancelada) o progresso e `0.0` e a proxima parada e `null`.
 
+**Movimentacoes recentes (`GET /dashboard/movimentacoes-recentes?limite=`)**: ultimas movimentacoes de todas as encomendas, da mais recente para a mais antiga, com codigo de rastreio, status, parada (`null` se nao houver) e data. `limite` padrao 10, minimo 1, maximo 100 (fora disso a API responde 422).
+
 ## Frontend
 
 ```

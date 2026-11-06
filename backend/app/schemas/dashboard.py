@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 from app.models.encomenda import StatusEncomenda
@@ -54,3 +56,15 @@ class EnvioAtivoOut(BaseModel):
 class EnviosAtivosOut(BaseModel):
     total: int
     envios: list[EnvioAtivoOut]
+
+
+class MovimentacaoRecenteOut(BaseModel):
+    codigo_rastreio: str
+    status: StatusEncomenda
+    parada: str | None
+    data: datetime
+
+
+class MovimentacoesRecentesOut(BaseModel):
+    total: int
+    movimentacoes: list[MovimentacaoRecenteOut]

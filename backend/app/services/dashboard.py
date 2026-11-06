@@ -182,3 +182,25 @@ def listar_envios_ativos(db: Session) -> list[dict]:
         )
 
     return envios
+
+
+def listar_movimentacoes_recentes(db: Session, limite: int) -> list[dict]:
+    """Ultimas movimentacoes (mais recente primeiro), de qualquer encomenda."""
+    linhas = (
+        db.query(Movimentacao, Encomenda.codigo_rastreio, Parada.nome)
+        .join(Encomenda, Encomenda.id == Movimentacao.encomenda_id)
+        .outerjoin(Parada, Parada.id == Movimentacao.parada_id)
+        .order_by(Movimentacao.criado_em.desc(), Movimentacao.id.desc())
+        .limit(limite)
+        .all()
+    )
+
+    return [
+        {
+            "codigo_rastreio": codigo,
+            "status": movimentacao.status,
+            "parada": nome_parada,
+            "data": movimentacao.criado_em,
+        }
+        for movimentacao, codigo, nome_parada in linhas
+    ]
