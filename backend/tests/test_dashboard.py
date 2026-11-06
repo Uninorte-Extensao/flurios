@@ -407,3 +407,85 @@ def test_envios_ativos_viagem_cancelada_nao_conta_progresso(
     assert envio["status"] == "imprevisto"
     assert envio["progresso"] == 0.0
     assert envio["proxima_parada"] is None
+
+
+def test_movimentacoes_recentes_exige_autenticacao(client):
+    assert client.get("/dashboard/movimentacoes-recentes").status_code == 401
+
+
+def test_movimentacoes_recentes_nega_acesso_a_cliente(client, headers_cliente):
+    resposta = client.get("/dashboard/movimentacoes-recentes", headers=headers_cliente)
+
+    assert resposta.status_code == 403
+
+
+def test_movimentacoes_recentes_sem_movimentacoes_retorna_lista_vazia(client, headers_empresa):
+    resposta = client.get("/dashboard/movimentacoes-recentes", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"total": 0, "movimentacoes": []}
+
+
+def test_movimentacoes_recentes_padrao_10_mais_recentes_primeiro(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    for _ in range(12):
+        criar_encomenda_no_banco()
+
+    corpo = client.get("/dashboard/movimentacoes-recentes", headers=headers_empresa).json()
+
+    assert corpo["total"] == 10
+    codigos = [m["codigo_rastreio"] for m in corpo["movimentacoes"]]
+    assert codigos[0] == "FLU-TESTE-0012"
+    assert codigos[-1] == "FLU-TESTE-0003"
+    assert corpo["movimentacoes"][0]["status"] == "pendente"
+    assert corpo["movimentacoes"][0]["parada"] is None
+
+
+def test_movimentacoes_recentes_respeita_o_limite(
+    client, headers_empresa, criar_encomenda_no_banco
+):
+    for _ in range(5):
+        criar_encomenda_no_banco()
+
+    corpo = client.get(
+        "/dashboard/movimentacoes-recentes?limite=3", headers=headers_empresa
+    ).json()
+    assert [m["codigo_rastreio"] for m in corpo["movimentacoes"]] == [
+        "FLU-TESTE-0005",
+        "FLU-TESTE-0004",
+        "FLU-TESTE-0003",
+    ]
+
+    corpo = client.get(
+        "/dashboard/movimentacoes-recentes?limite=50", headers=headers_empresa
+    ).json()
+    assert corpo["total"] == 5
+
+
+def test_movimentacoes_recentes_rejeita_limite_invalido(client, headers_empresa):
+    for limite in (0, -1, 101, "abc"):
+        resposta = client.get(
+            f"/dashboard/movimentacoes-recentes?limite={limite}", headers=headers_empresa
+        )
+        assert resposta.status_code == 422
+
+
+def test_movimentacoes_recentes_traz_nome_da_parada(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.services.viagem import registrar_localizacao
+
+    viagem, paradas = _viagem_com_rota(db_session)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
+    _associar(db_session, viagem, encomenda)
+    registrar_localizacao(db_session, viagem, paradas[1])
+
+    primeira = client.get(
+        "/dashboard/movimentacoes-recentes", headers=headers_empresa
+    ).json()["movimentacoes"][0]
+
+    assert primeira["codigo_rastreio"] == encomenda.codigo_rastreio
+    assert primeira["status"] == "em_transito"
+    assert primeira["parada"] == "Itacoatiara"
+    assert primeira["data"]

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.deps import empresa_logado
@@ -9,6 +9,8 @@ from app.schemas.dashboard import (
     EnvioAtivoOut,
     EnviosAtivosOut,
     EncomendasPorMunicipioOut,
+    MovimentacaoRecenteOut,
+    MovimentacoesRecentesOut,
     MunicipioContagemOut,
     OcupacaoOut,
     OcupacaoViagemOut,
@@ -21,6 +23,7 @@ from app.services.dashboard import (
     contar_encomendas_por_status,
     contar_viagens_por_status,
     listar_envios_ativos,
+    listar_movimentacoes_recentes,
 )
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -87,3 +90,17 @@ def envios_ativos(
     envios = [EnvioAtivoOut(**linha) for linha in listar_envios_ativos(db)]
 
     return EnviosAtivosOut(total=len(envios), envios=envios)
+
+
+@router.get("/movimentacoes-recentes", response_model=MovimentacoesRecentesOut)
+def movimentacoes_recentes(
+    limite: int = Query(10, ge=1, le=100),
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    movimentacoes = [
+        MovimentacaoRecenteOut(**linha)
+        for linha in listar_movimentacoes_recentes(db, limite)
+    ]
+
+    return MovimentacoesRecentesOut(total=len(movimentacoes), movimentacoes=movimentacoes)
