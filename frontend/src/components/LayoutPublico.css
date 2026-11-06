@@ -1,0 +1,27 @@
+.publico {
+  min-height: 100vh;
+}
+
+.publico__header {
+  display: flex;
+  align-items: center;
+  height: var(--header-altura);
+  padding: 0 var(--espaco-5);
+  background: var(--header-bg);
+}
+
+.publico__conteudo {
+  display: flex;
+  justify-content: center;
+  padding: var(--espaco-6) var(--espaco-4);
+}
+
+@media (max-width: 900px) {
+  .publico__header {
+    padding: 0 var(--espaco-4);
+  }
+
+  .publico__conteudo {
+    padding-top: var(--espaco-5);
+  }
+}

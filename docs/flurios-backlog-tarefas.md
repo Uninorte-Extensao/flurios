@@ -156,6 +156,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 
 | # | Tarefa | Prioridade | Dificuldade | Depende de |
 |---|---|---|---|---|
+| F.0 | ✅ Base do frontend: React Router, camada `services/`, contexto de autenticação, rotas protegidas por tipo e design system em CSS — concluída | P0 | 🟡 | 0.5, 1.6 |
 | F.1 | Tela de login | P0 | 🟢 | 1.6 |
 | F.2 | Tela de cadastro de cliente | P0 | 🟢 | 2.3 |
 | F.3 | Tela de cadastro de encomenda (lado cliente) | P0 | 🟡 | 3.4 |

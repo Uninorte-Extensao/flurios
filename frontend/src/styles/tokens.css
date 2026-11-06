@@ -1,0 +1,43 @@
+/* Design system Flurios — variáveis (paleta extraída dos protótipos em design/) */
+:root {
+  /* Cores principais */
+  --azul: #135999;
+  --azul-escuro: #0a2f52;
+  --verde: #53bd92;
+  --verde-escuro: #3a9975;
+  --fundo: #eaf3fb;
+  --cartao: #f6f9fc;
+  --branco: #ffffff;
+  --texto: #1f2937;
+  --cinza: #64748b;
+  --ambar: #d99a3d;
+  --coral: #e0706e;
+
+  /* Derivadas (bordas, fundos suaves de badges) */
+  --borda: #dbe6f0;
+  --cinza-claro: #eef2f6;
+  --azul-claro: #d6e8f7;
+  --ambar-claro: #fbe9c6;
+  --verde-claro: #dcf3ea;
+  --coral-claro: #fbe0df;
+
+  /* Estrutura */
+  --header-bg: var(--azul);
+  --header-altura: 56px;
+  --sidebar-largura: 220px;
+  --bottomnav-altura: 60px;
+  --raio: 12px;
+  --raio-pequeno: 8px;
+  --sombra: 0 1px 2px rgba(10, 47, 82, 0.06), 0 4px 14px rgba(10, 47, 82, 0.07);
+
+  /* Espaçamento */
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 24px;
+  --espaco-6: 32px;
+
+  /* Tipografia */
+  --fonte: Arial, Helvetica, sans-serif;
+}

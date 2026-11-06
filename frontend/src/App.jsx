@@ -1,28 +1,13 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthProvider'
+import AppRoutes from './routes/AppRoutes'
 
-function App() {
-  const [status, setStatus] = useState("Verificando API...");
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/health")
-      .then((resposta) => resposta.json())
-      .then((dados) => {
-        setStatus(`${dados.status} - ${dados.sistema}`);
-      })
-      .catch(() => {
-        setStatus("API offline");
-      });
-  }, []);
-
+export default function App() {
   return (
-    <div>
-      <h1>Flurios</h1>
-      <p>Sistema de gerenciamento e rastreamento de entregas fluviais.</p>
-
-      <h2>Status da API</h2>
-      <p>{status}</p>
-    </div>
-  );
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  )
 }
-
-export default App;
