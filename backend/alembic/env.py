@@ -16,6 +16,7 @@ from app.models.parada import Parada
 from app.models.viagem import Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
 from app.models.movimentacao import Movimentacao
+from app.models.pessoa_autorizada import PessoaAutorizada
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
