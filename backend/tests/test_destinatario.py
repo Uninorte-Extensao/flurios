@@ -1,4 +1,5 @@
 from app.core.security import criar_token_acesso
+from app.models.destinatario import Destinatario
 from app.schemas.cliente import ClienteCreate
 from app.schemas.usuario import UsuarioCreate
 from app.services.cliente import completar_cadastro_cliente
@@ -53,8 +54,10 @@ def test_cadastrar_destinatario_sucesso(client, db_session):
     assert response.status_code == 201
     corpo = response.json()
     assert corpo["nome"] == "Joao Pereira"
-    assert corpo["cpf"] == CPF_VALIDO_1
+    assert corpo["cpf"] == "111.***.***-96"
+    assert CPF_VALIDO_1 not in response.text
     assert corpo["municipio"] == "Tefe"
+    assert db_session.query(Destinatario).one().cpf == CPF_VALIDO_1
 
 
 def test_cadastrar_destinatario_sem_token_retorna_401(client):
@@ -86,7 +89,9 @@ def test_cadastrar_destinatario_aceita_cpf_formatado_e_guarda_so_numeros(client,
     )
 
     assert response.status_code == 201
-    assert response.json()["cpf"] == CPF_VALIDO_1
+    assert response.json()["cpf"] == "111.***.***-96"
+    assert "111.222.333-96" not in response.text
+    assert db_session.query(Destinatario).one().cpf == CPF_VALIDO_1
 
 
 def test_cadastrar_destinatario_cpf_invalido_retorna_422(client, db_session):

@@ -5,9 +5,8 @@ Duas frentes:
 2. Dinamica: executa o fluxo real e procura qualquer CPF (so digitos ou
    formatado) em TODOS os corpos de resposta, inclusive os de erro.
 
-Os dois testes marcados como xfail(strict=True) documentam os vazamentos
-encontrados na revisao (ver docs/relatorio-revisao-cpf-t7-6.md). Quem corrigir
-os vazamentos remove a marcacao.
+Os vazamentos encontrados na revisao (docs/relatorio-revisao-cpf-t7-6.md) foram
+corrigidos em fix/mascarar-cpf-respostas; estes testes passam a impedir que voltem.
 """
 import importlib
 import pkgutil
@@ -26,8 +25,6 @@ from app.main import app
 from app.models.encomenda import StatusEncomenda
 from app.schemas.usuario import UsuarioCreate
 from app.services.usuario import criar_usuario
-
-MOTIVO_VAZAMENTO = "Vazamentos de CPF encontrados na T7.6; correcao em fix/mascarar-cpf-respostas"
 
 CPF_CLIENTE = "52998224725"
 CPF_DESTINATARIO = "11144477735"
@@ -119,18 +116,9 @@ def _campos_de_cpf_sem_mascara():
     return achados
 
 
-@pytest.mark.xfail(strict=True, reason=MOTIVO_VAZAMENTO)
 def test_todo_campo_de_cpf_em_resposta_usa_cpf_mascarado():
+    """Um campo novo de CPF em schema de saida, sem CpfMascarado, quebra este teste."""
     assert _campos_de_cpf_sem_mascara() == set()
-
-
-def test_varredura_estatica_encontra_exatamente_os_vazamentos_conhecidos():
-    """Trava a lista atual: um campo novo de CPF sem mascara quebra este teste."""
-    assert _campos_de_cpf_sem_mascara() == {
-        "ClienteOut.cpf",
-        "DestinatarioOut.cpf",
-        "DestinatarioDetalheOut.cpf",
-    }
 
 
 class _Gravador:
@@ -235,31 +223,36 @@ def test_fluxo_completo_foi_exercitado(client, db_session, headers_empresa, cria
     assert ("POST", "/encomendas/{id}/retirada", 422) in chamados
 
 
-def test_varredura_dinamica_encontra_exatamente_os_vazamentos_conhecidos(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
-):
-    """Trava a lista atual de respostas com CPF exposto (inclui corpos de erro)."""
-    api = _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco)
-
-    assert api.vazamentos() == VAZAMENTOS_DINAMICOS_CONHECIDOS
-
-
-@pytest.mark.xfail(strict=True, reason=MOTIVO_VAZAMENTO)
 def test_nenhuma_resposta_da_api_devolve_cpf(
     client, db_session, headers_empresa, criar_encomenda_no_banco
 ):
+    """Nenhuma resposta (sucesso ou erro) traz CPF completo, formatado ou digitado de volta."""
     api = _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco)
 
     assert api.vazamentos() == set()
 
 
-# (metodo, caminho, status) das respostas que expoem CPF. Ver o relatorio:
-# os dois 201 devolvem o CPF completo guardado; os tres 422 repetem o CPF
-# invalido digitado pelo proprio chamador (eco do campo "input" do FastAPI).
-VAZAMENTOS_DINAMICOS_CONHECIDOS = {
-    ("POST", "/clientes", 201),
-    ("POST", "/destinatarios", 201),
-    ("POST", "/destinatarios", 422),
-    ("POST", "/encomendas/{id}/pessoa-autorizada", 422),
-    ("POST", "/encomendas/{id}/retirada", 422),
-}
+def test_detector_dinamico_reconhece_cpf_exposto():
+    """Sanidade do proprio detector: ele precisa acusar CPF em qualquer formato."""
+    assert _corpo_expoe_cpf('{"cpf": "52998224725"}')
+    assert _corpo_expoe_cpf('{"cpf": "529.982.247-25"}')
+    assert _corpo_expoe_cpf('{"input": "12345678900"}')
+    assert not _corpo_expoe_cpf('{"cpf": "529.***.***-25", "telefone": "92999990000"}')
+
+
+@pytest.mark.parametrize(
+    "caminho_corpo",
+    [
+        ("/clientes", {"cpf": CPF_INVALIDO_ENVIADO, "telefone": "92999990000"}),
+        ("/destinatarios", {"nome": "Joao", "cpf": CPF_INVALIDO_ENVIADO, "telefone": "1", "endereco": "R", "municipio": "T"}),
+    ],
+)
+def test_erro_422_nao_repete_o_cpf_digitado(client, headers_cliente, caminho_corpo):
+    caminho, corpo = caminho_corpo
+
+    resposta = client.post(caminho, json=corpo, headers=headers_cliente)
+
+    assert resposta.status_code == 422
+    assert CPF_INVALIDO_ENVIADO not in resposta.text
+    assert all("input" not in erro for erro in resposta.json()["detail"])
+    assert resposta.json()["detail"][0]["loc"][-1] == "cpf"  # a mensagem de erro continua util

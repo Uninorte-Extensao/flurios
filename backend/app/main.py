@@ -1,5 +1,8 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.erros import tratar_erro_de_validacao
 
 from app.routers import (
     cliente,
@@ -21,6 +24,8 @@ app = FastAPI(
   version="0.1.0",
 
 )
+
+app.add_exception_handler(RequestValidationError, tratar_erro_de_validacao)
 
 app.add_middleware(
     CORSMiddleware,
