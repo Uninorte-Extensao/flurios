@@ -1,0 +1,65 @@
+"""GET /rotas/destinos: paradas que o cliente pode escolher como destino (exceto a origem)."""
+
+
+def _criar_rota(client, headers_empresa, nome, paradas):
+    rota = client.post("/rotas", json={"nome": nome}, headers=headers_empresa).json()
+    for ordem, nome_parada in enumerate(paradas, start=1):
+        resposta = client.post(
+            f"/rotas/{rota['id']}/paradas",
+            json={"nome": nome_parada, "ordem": ordem},
+            headers=headers_empresa,
+        )
+        assert resposta.status_code == 201
+    return rota
+
+
+def test_destinos_exige_login(client):
+    assert client.get("/rotas/destinos").status_code == 401
+
+
+def test_cliente_logado_lista_destinos(client, headers_cliente, rota_com_paradas):
+    resposta = client.get("/rotas/destinos", headers=headers_cliente)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == [
+        {"id": rota_com_paradas.destino.id, "nome": "Tefe", "rota_nome": "Manaus - Coari"},
+        {"id": rota_com_paradas.final.id, "nome": "Coari", "rota_nome": "Manaus - Coari"},
+    ]
+
+
+def test_empresa_tambem_lista_destinos(client, headers_empresa, rota_com_paradas):
+    assert client.get("/rotas/destinos", headers=headers_empresa).status_code == 200
+
+
+def test_destinos_nunca_inclui_a_parada_de_ordem_1(client, headers_cliente, rota_com_paradas):
+    ids = [d["id"] for d in client.get("/rotas/destinos", headers=headers_cliente).json()]
+
+    assert rota_com_paradas.origem.id not in ids
+
+
+def test_destinos_reune_paradas_de_todas_as_rotas(client, headers_cliente, headers_empresa):
+    _criar_rota(client, headers_empresa, "Manaus - Parintins", ["Manaus", "Parintins"])
+    _criar_rota(client, headers_empresa, "Manaus - Tefe", ["Manaus", "Careiro", "Tefe"])
+
+    resposta = client.get("/rotas/destinos", headers=headers_cliente).json()
+
+    assert [(d["rota_nome"], d["nome"]) for d in resposta] == [
+        ("Manaus - Parintins", "Parintins"),
+        ("Manaus - Tefe", "Careiro"),
+        ("Manaus - Tefe", "Tefe"),
+    ]
+
+
+def test_destinos_sem_paradas_alem_da_origem_retorna_lista_vazia(
+    client, headers_cliente, headers_empresa
+):
+    _criar_rota(client, headers_empresa, "Rota so com origem", ["Manaus"])
+
+    assert client.get("/rotas/destinos", headers=headers_cliente).json() == []
+
+
+def test_destinos_nao_conflita_com_detalhe_da_rota(client, headers_empresa, rota_com_paradas):
+    resposta = client.get(f"/rotas/{rota_com_paradas.rota.id}", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json()["nome"] == "Manaus - Coari"

@@ -24,6 +24,15 @@ def criar_destinatario(
     return novo_destinatario
 
 
+def listar_destinatarios_do_cliente(db: Session, cliente_id: int) -> list[Destinatario]:
+    return (
+        db.query(Destinatario)
+        .filter(Destinatario.cliente_id == cliente_id)
+        .order_by(Destinatario.nome, Destinatario.id)
+        .all()
+    )
+
+
 def buscar_destinatario_do_cliente(
     db: Session,
     destinatario_id: int,

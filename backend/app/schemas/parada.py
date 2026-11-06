@@ -11,6 +11,14 @@ class ParadaUpdate(BaseModel):
     ordem: int | None = Field(default=None, gt=0)
 
 
+class DestinoOut(BaseModel):
+    """Parada que pode ser destino de encomenda (qualquer parada exceto a origem)."""
+
+    id: int
+    nome: str
+    rota_nome: str
+
+
 class ParadaOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -9,7 +9,11 @@ from app.schemas.destinatario import (
     DestinatarioDetalheOut,
     DestinatarioOut,
 )
-from app.services.destinatario import buscar_destinatario_do_cliente, criar_destinatario
+from app.services.destinatario import (
+    buscar_destinatario_do_cliente,
+    criar_destinatario,
+    listar_destinatarios_do_cliente,
+)
 
 router = APIRouter(prefix="/destinatarios", tags=["destinatarios"])
 
@@ -21,6 +25,14 @@ def cadastrar_destinatario(
     db: Session = Depends(get_db),
 ):
     return criar_destinatario(db, cliente.id, dados)
+
+
+@router.get("", response_model=list[DestinatarioOut])
+def listar_destinatarios(
+    cliente: Cliente = Depends(cliente_logado),
+    db: Session = Depends(get_db),
+):
+    return listar_destinatarios_do_cliente(db, cliente.id)
 
 
 @router.get("/{destinatario_id}", response_model=DestinatarioDetalheOut)

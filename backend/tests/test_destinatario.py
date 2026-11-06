@@ -174,3 +174,39 @@ def test_obter_destinatario_inexistente_retorna_404(client, db_session):
     )
 
     assert response.status_code == 404
+
+
+def test_listar_destinatarios_retorna_apenas_os_do_cliente_logado_com_cpf_mascarado(
+    client, db_session
+):
+    _, token_maria = _cadastrar_cliente_logado(db_session)
+    _, token_joao = _cadastrar_cliente_logado(db_session, email="joao@teste.com", cpf=CPF_VALIDO_1)
+    headers_maria = {"Authorization": f"Bearer {token_maria}"}
+    headers_joao = {"Authorization": f"Bearer {token_joao}"}
+    client.post("/destinatarios", json={**DADOS_DESTINATARIO, "nome": "Zeca"}, headers=headers_maria)
+    client.post("/destinatarios", json={**DADOS_DESTINATARIO, "nome": "Ana"}, headers=headers_maria)
+    client.post("/destinatarios", json={**DADOS_DESTINATARIO, "nome": "Outro"}, headers=headers_joao)
+
+    resposta = client.get("/destinatarios", headers=headers_maria)
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert [d["nome"] for d in corpo] == ["Ana", "Zeca"]
+    assert all("*" in d["cpf"] and CPF_VALIDO_1 not in d["cpf"] for d in corpo)
+
+
+def test_listar_destinatarios_sem_cadastros_retorna_lista_vazia(client, db_session):
+    _, token = _cadastrar_cliente_logado(db_session)
+
+    resposta = client.get("/destinatarios", headers={"Authorization": f"Bearer {token}"})
+
+    assert resposta.status_code == 200
+    assert resposta.json() == []
+
+
+def test_listar_destinatarios_sem_login_retorna_401(client):
+    assert client.get("/destinatarios").status_code == 401
+
+
+def test_listar_destinatarios_como_empresa_retorna_403(client, headers_empresa):
+    assert client.get("/destinatarios", headers=headers_empresa).status_code == 403

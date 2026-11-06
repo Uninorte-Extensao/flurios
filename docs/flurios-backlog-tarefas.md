@@ -58,6 +58,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 2.4 | Endpoint `POST /destinatarios` | P0 | 🟢 | 2.2 |
 | 2.5 | Endpoint `GET /destinatarios/{id}` | P1 | 🟢 | 2.4 |
 | 2.6 | Validação de CPF (formato) nos dois cadastros | P1 | 🟡 | 2.3, 2.4 |
+| 2.7 | ✅ Endpoint `GET /destinatarios` (lista do cliente logado, CPF mascarado) | P0 | 🟢 | 2.4 |
 
 *Pode dividir em 2 pessoas: uma cuida de Cliente (2.1, 2.3), outra de Destinatário (2.2, 2.4, 2.5) — juntam-se na 2.6.*
 
@@ -93,6 +94,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 4.4 | Model `Parada` (com campo `ordem`) + migration | P0 | 🟢 | 4.3 |
 | 4.5 | Validar que `ordem` não se repete na mesma rota | P1 | 🟡 | 4.4 |
 | 4.6 | CRUD de rota + paradas (endpoints) | P0 | 🟡 | 4.4 |
+| 4.7 | ✅ Endpoint `GET /rotas/destinos` (paradas de todas as rotas, exceto a de ordem 1; qualquer usuário logado) | P0 | 🟢 | 4.6 |
 
 *Três pessoas podem dividir: uma em Embarcação (4.1–4.2), outra em Rota (4.3), outra em Parada (4.4–4.6).*
 

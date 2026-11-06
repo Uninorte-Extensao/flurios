@@ -176,6 +176,8 @@ def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomen
     criado = api.request("POST", "/destinatarios", json=dados_dest, headers=headers_novo)
     destinatario_id = criado.json()["id"]
     api.request("GET", f"/destinatarios/{destinatario_id}", headers=headers_novo)
+    api.request("GET", "/destinatarios", headers=headers_novo)
+    api.request("GET", "/rotas/destinos", headers=headers_novo)
     api.request("POST", "/destinatarios", json={**dados_dest, "cpf": CPF_INVALIDO_ENVIADO}, headers=headers_novo)
 
     # Encomenda, pessoa autorizada e retirada
@@ -226,6 +228,7 @@ def test_fluxo_completo_foi_exercitado(client, db_session, headers_empresa, cria
     assert ("POST", "/clientes", 201) in chamados
     assert ("POST", "/destinatarios", 201) in chamados
     assert ("GET", "/destinatarios/{id}", 200) in chamados
+    assert ("GET", "/destinatarios", 200) in chamados
     assert ("POST", "/encomendas/{id}/pessoa-autorizada", 201) in chamados
     assert ("GET", "/encomendas/{id}/pessoa-autorizada", 200) in chamados
     assert ("POST", "/encomendas/{id}/retirada", 201) in chamados

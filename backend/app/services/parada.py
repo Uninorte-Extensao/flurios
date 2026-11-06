@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.parada import Parada
+from app.models.rota import Rota
 from app.schemas.parada import ParadaCreate, ParadaUpdate
 
 MENSAGEM_ORDEM_REPETIDA = "Ja existe uma parada com essa ordem na rota."
@@ -81,3 +82,14 @@ def excluir_parada(db: Session, parada: Parada) -> None:
 
 def buscar_parada_por_id(db: Session, parada_id: int) -> Parada | None:
     return db.query(Parada).filter(Parada.id == parada_id).first()
+
+
+def listar_destinos(db: Session) -> list[tuple[Parada, Rota]]:
+    """Paradas de todas as rotas, menos a de ordem 1 (origem)."""
+    return (
+        db.query(Parada, Rota)
+        .join(Rota, Parada.rota_id == Rota.id)
+        .filter(Parada.ordem != ORDEM_ORIGEM)
+        .order_by(Rota.nome, Parada.ordem)
+        .all()
+    )
