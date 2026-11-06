@@ -146,6 +146,9 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 8.1 | Endpoint `GET /dashboard/resumo` (contagens por status) | P1 | 🟢 | 3.7 |
 | 8.2 | Endpoint com contagem de viagens em andamento | P1 | 🟢 | 5.4 |
 | 8.3 | Endpoint com contagem por município de destino | P2 | 🟡 | 6.4 |
+| 8.4 | ✅ Endpoint `GET /dashboard/ocupacao` (ocupação por viagem em andamento) — concluída | P1 | 🟡 | 5.4 |
+| 8.5 | ✅ Endpoint `GET /dashboard/envios-ativos` (progresso e próxima parada) — concluída | P1 | 🟡 | 6.4 |
+| 8.6 | ✅ Endpoint `GET /dashboard/movimentacoes-recentes` (com limite) — concluída | P1 | 🟢 | 6.1 |
 
 ---
 
