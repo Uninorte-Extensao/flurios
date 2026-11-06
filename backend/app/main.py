@@ -6,6 +6,7 @@ from app.core.erros import tratar_erro_de_validacao
 
 from app.routers import (
     cliente,
+    dashboard,
     destinatario,
     embarcacao,
     empresa,
@@ -45,6 +46,7 @@ app.include_router(retirada.router)
 app.include_router(embarcacao.router)
 app.include_router(rota.router)
 app.include_router(viagem.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health")
