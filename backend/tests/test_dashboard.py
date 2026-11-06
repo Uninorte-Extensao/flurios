@@ -106,3 +106,63 @@ def test_viagens_conta_em_andamento_e_por_status(client, headers_empresa, db_ses
         "concluida": 1,
         "cancelada": 1,
     }
+
+
+def _encomenda_para_municipio(db_session, cliente_id, municipio, n):
+    from app.models.destinatario import Destinatario
+    from app.models.encomenda import Encomenda
+
+    destinatario = Destinatario(
+        cliente_id=cliente_id,
+        nome=f"Dest {municipio}",
+        cpf="22233344405",
+        telefone="92988887777",
+        endereco="Rua A, 1",
+        municipio=municipio,
+    )
+    db_session.add(destinatario)
+    db_session.flush()
+
+    for i in range(n):
+        db_session.add(
+            Encomenda(
+                cliente_id=cliente_id,
+                destinatario_id=destinatario.id,
+                codigo_rastreio=f"FLU-{municipio[:3].upper()}-{i:04d}",
+                descricao="Caixa",
+            )
+        )
+    db_session.commit()
+
+
+def test_municipios_exige_autenticacao(client):
+    assert client.get("/dashboard/municipios").status_code == 401
+
+
+def test_municipios_nega_acesso_a_cliente(client, headers_cliente):
+    assert client.get("/dashboard/municipios", headers=headers_cliente).status_code == 403
+
+
+def test_municipios_sem_encomendas_retorna_lista_vazia(client, headers_empresa):
+    resposta = client.get("/dashboard/municipios", headers=headers_empresa)
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"total": 0, "municipios": []}
+
+
+def test_municipios_conta_e_ordena_do_maior_para_o_menor(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    primeira = criar_encomenda_no_banco()  # destino Tefe (1 encomenda)
+    cliente_id = primeira.cliente_id
+    _encomenda_para_municipio(db_session, cliente_id, "Parintins", 3)
+    _encomenda_para_municipio(db_session, cliente_id, "Coari", 2)
+
+    corpo = client.get("/dashboard/municipios", headers=headers_empresa).json()
+
+    assert corpo["total"] == 6
+    assert corpo["municipios"] == [
+        {"municipio": "Parintins", "total": 3},
+        {"municipio": "Coari", "total": 2},
+        {"municipio": "Tefe", "total": 1},
+    ]
