@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Card from '../../components/Card'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -11,6 +12,11 @@ export default function AreaCliente() {
       <p className="pagina__subtitulo">Acompanhe suas encomendas.</p>
       <Card titulo={`Olá, ${usuario.nome}`}>
         <p className="texto-suave">Você está na área do cliente. Suas encomendas aparecerão aqui.</p>
+        <p style={{ marginTop: 'var(--espaco-4)' }}>
+          <Link to="/cliente/nova-encomenda" className="btn btn--primario">
+            Nova encomenda
+          </Link>
+        </p>
       </Card>
     </>
   )

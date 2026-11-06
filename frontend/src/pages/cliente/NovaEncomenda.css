@@ -1,0 +1,110 @@
+/* Nova encomenda: formulário à esquerda, dicas à direita (mesma proporção da visão do cliente) */
+.nova-encomenda {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.nova-encomenda__secao {
+  margin: var(--espaco-4) 0 var(--espaco-3);
+  padding-bottom: var(--espaco-2);
+  border-bottom: 1px solid var(--borda);
+  font-size: 15px;
+}
+
+.nova-encomenda__secao:first-child {
+  margin-top: 0;
+}
+
+.nova-encomenda__linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espaco-3);
+}
+
+.nova-encomenda__dicas {
+  margin: 0;
+  padding-left: var(--espaco-4);
+  display: grid;
+  gap: var(--espaco-3);
+}
+
+/* Tela de sucesso */
+.nova-encomenda__sucesso {
+  max-width: 640px;
+}
+
+.codigo-rastreio {
+  margin: var(--espaco-1) 0 var(--espaco-4);
+  padding: var(--espaco-4);
+  border: 1px dashed var(--azul);
+  border-radius: var(--raio-pequeno);
+  background: var(--cartao);
+  color: var(--azul-escuro);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  word-break: break-all;
+  user-select: all;
+}
+
+.nova-encomenda__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-4);
+}
+
+.resumo {
+  display: grid;
+  gap: var(--espaco-3);
+  margin: var(--espaco-4) 0;
+  padding: var(--espaco-4);
+  border-radius: var(--raio-pequeno);
+  background: var(--cartao);
+}
+
+.resumo > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: var(--espaco-3);
+  align-items: center;
+}
+
+.resumo dt {
+  color: var(--cinza);
+  font-size: 13px;
+}
+
+.resumo dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .nova-encomenda {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nova-encomenda__linha {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .codigo-rastreio {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+
+  .resumo > div {
+    grid-template-columns: 1fr;
+    gap: var(--espaco-1);
+  }
+
+  .nova-encomenda__acoes .btn {
+    flex: 1 1 100%;
+  }
+}

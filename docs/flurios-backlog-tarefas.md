@@ -162,7 +162,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | F.0 | ✅ Base do frontend: React Router, camada `services/`, contexto de autenticação, rotas protegidas por tipo e design system em CSS — concluída | P0 | 🟡 | 0.5, 1.6 |
 | F.1 | Tela de login | P0 | 🟢 | 1.6 |
 | F.2 | Tela de cadastro de cliente | P0 | 🟢 | 2.3 |
-| F.3 | Tela de cadastro de encomenda (lado cliente) | P0 | 🟡 | 3.4 |
+| F.3 | ✅ Tela de cadastro de encomenda (lado cliente): origem fixa Manaus, destino e destinatário (existente ou novo), código de rastreio com botão de copiar; menu do cliente com Início, Nova encomenda e Minhas encomendas (rota provisória até a F.4) — concluída | P0 | 🟡 | 3.4, 3.9, 4.7, 2.7 |
 | F.4 | Tela "meus códigos" + rastreamento com linha do tempo | P0 | 🟡 | 6.4 |
 | F.5 | Telas administrativas: embarcação, rota, viagem | P0 | 🟡 | 4.2, 4.6, 5.2 |
 | F.6 | Tela de gestão de encomendas (empresa) | P0 | 🟡 | 3.6 |
