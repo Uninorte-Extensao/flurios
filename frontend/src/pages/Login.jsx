@@ -5,14 +5,13 @@ import Card from '../components/Card'
 import CampoTexto from '../components/CampoTexto'
 import { useAuth } from '../hooks/useAuth'
 import { caminhoInicial } from '../routes/caminhos'
+import { emailValido } from '../utils/validacao'
 import './Auth.css'
-
-const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function validar({ email, senha }) {
   const erros = {}
   if (!email.trim()) erros.email = 'Informe o e-mail.'
-  else if (!EMAIL_VALIDO.test(email.trim())) erros.email = 'Informe um e-mail válido.'
+  else if (!emailValido(email)) erros.email = 'Informe um e-mail válido.'
   if (!senha) erros.senha = 'Informe a senha.'
   return erros
 }
