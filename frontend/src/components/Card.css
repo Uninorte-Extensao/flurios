@@ -1,0 +1,25 @@
+.card {
+  padding: var(--espaco-4) var(--espaco-5);
+  background: var(--branco);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.card__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-3);
+}
+
+.card__titulo {
+  font-size: 15px;
+}
+
+/* KPI: número grande dentro de um card */
+.card__kpi {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+}

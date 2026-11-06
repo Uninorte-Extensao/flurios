@@ -1,0 +1,35 @@
+.tabela__rolagem {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabela th {
+  padding: var(--espaco-2) var(--espaco-3);
+  background: var(--cinza-claro);
+  color: var(--cinza);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tabela td {
+  padding: var(--espaco-3);
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.tabela tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabela__vazio {
+  padding: var(--espaco-5);
+  color: var(--cinza);
+  text-align: center;
+}

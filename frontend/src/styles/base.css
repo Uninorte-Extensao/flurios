@@ -1,0 +1,191 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--texto);
+  background: var(--fundo);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+a {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+.texto-suave {
+  color: var(--cinza);
+}
+
+.somente-leitor-de-tela {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Cabeçalho de página (título + subtítulo) */
+.pagina__titulo {
+  margin-bottom: var(--espaco-1);
+}
+
+.pagina__subtitulo {
+  color: var(--cinza);
+  margin-bottom: var(--espaco-5);
+}
+
+/* Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  min-height: 40px;
+  padding: 0 var(--espaco-4);
+  border: 1px solid transparent;
+  border-radius: var(--raio-pequeno);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primario {
+  background: var(--azul);
+  color: var(--branco);
+}
+
+.btn--primario:hover:not(:disabled) {
+  background: var(--azul-escuro);
+}
+
+.btn--sucesso {
+  background: var(--verde-escuro);
+  color: var(--branco);
+}
+
+.btn--sucesso:hover:not(:disabled) {
+  background: var(--verde);
+}
+
+.btn--contorno {
+  background: var(--branco);
+  border-color: var(--borda);
+  color: var(--azul);
+}
+
+.btn--bloco {
+  width: 100%;
+}
+
+/* Formulários */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+  margin-bottom: var(--espaco-4);
+}
+
+.campo__rotulo {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.campo__entrada {
+  min-height: 42px;
+  padding: 0 var(--espaco-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--branco);
+}
+
+.campo__entrada:focus {
+  outline: 2px solid var(--azul);
+  outline-offset: 0;
+  border-color: var(--azul);
+}
+
+.campo--erro .campo__entrada {
+  border-color: var(--coral);
+}
+
+.campo__erro {
+  color: #b94a48;
+  font-size: 12px;
+}
+
+.campo__ajuda {
+  color: var(--cinza);
+  font-size: 12px;
+}
+
+/* Alertas */
+.alerta {
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-pequeno);
+  margin-bottom: var(--espaco-4);
+  font-size: 13px;
+}
+
+.alerta--erro {
+  background: var(--coral-claro);
+  color: #8f2f2d;
+}
+
+.alerta--info {
+  background: var(--azul-claro);
+  color: var(--azul-escuro);
+}
+
+.alerta--sucesso {
+  background: var(--verde-claro);
+  color: #1f6048;
+}

@@ -1,0 +1,23 @@
+.app {
+  min-height: 100vh;
+}
+
+.app__corpo {
+  display: grid;
+  grid-template-columns: var(--sidebar-largura) minmax(0, 1fr);
+}
+
+.app__conteudo {
+  padding: var(--espaco-5);
+}
+
+@media (max-width: 900px) {
+  .app__corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app__conteudo {
+    padding: var(--espaco-4);
+    padding-bottom: calc(var(--bottomnav-altura) + var(--espaco-4));
+  }
+}
