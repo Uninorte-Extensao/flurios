@@ -8,6 +8,10 @@ from app.models.empresa import Empresa
 from app.models.retirada import Retirada
 
 
+REVISAO = "7ceac32dc579"  # cria tabela de retiradas
+REVISAO_ANTERIOR = "b43924236404"  # cria tabela de pessoas autorizadas
+
+
 def _nova(encomenda_id, empresa_id, **extra):
     dados = {
         "encomenda_id": encomenda_id,
@@ -70,7 +74,7 @@ def test_migration_cria_e_remove_tabela_em_banco_temporario(tmp_path):
     config.set_main_option("sqlalchemy.url", url)
     engine = create_engine(url)
 
-    command.upgrade(config, "head")
+    command.upgrade(config, REVISAO)
     assert "retiradas" in inspect(engine).get_table_names()
     colunas = {c["name"] for c in inspect(engine).get_columns("retiradas")}
     assert colunas == {
@@ -82,7 +86,7 @@ def test_migration_cria_e_remove_tabela_em_banco_temporario(tmp_path):
         "criado_em",
     }
 
-    command.downgrade(config, "-1")
+    command.downgrade(config, REVISAO_ANTERIOR)
     assert "retiradas" not in inspect(engine).get_table_names()
     assert "pessoas_autorizadas" in inspect(engine).get_table_names()
 
