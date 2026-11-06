@@ -111,7 +111,7 @@ def _criar_viagem_com_encomendas(client, headers, criar_encomenda_no_banco, stat
 
 
 def test_cadastro_de_encomenda_registra_movimentacao_pendente(
-    client, db_session, headers_cliente
+    client, db_session, headers_cliente, rota_com_paradas
 ):
     destinatario = client.post(
         "/destinatarios",
@@ -127,7 +127,11 @@ def test_cadastro_de_encomenda_registra_movimentacao_pendente(
 
     resposta = client.post(
         "/encomendas",
-        json={"destinatario_id": destinatario["id"], "descricao": "Caixa"},
+        json={
+            "destinatario_id": destinatario["id"],
+            "parada_destino_id": rota_com_paradas.destino.id,
+            "descricao": "Caixa",
+        },
         headers=headers_cliente,
     )
 

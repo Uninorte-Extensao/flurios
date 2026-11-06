@@ -76,6 +76,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 3.6 | Endpoint `GET /encomendas?cliente_id=` (lista do cliente) | P1 | 🟢 | 3.4 |
 | 3.7 | Endpoint `PATCH /encomendas/{id}/status` (acao de Empresa, nao de Cliente) | P0 | 🟡 | 3.3, 1.10 |
 | 3.8 | Testes automatizados (cadastro, geração de código, mudança de status) | P1 | 🟡 | 3.7 |
+| 3.9 | ✅ Destino na encomenda: `parada_destino_id` (nullable na migration, obrigatório em `POST /encomendas`, não pode ser a parada de ordem 1/origem); `EncomendaOut` devolve `destino_nome` | P0 | 🟡 | 3.4, 4.6 |
 
 *Duas pessoas em paralelo: uma em modelagem + geração de código (3.1–3.3), outra em endpoints (3.4–3.8) assim que 3.1 estiver pronto.*
 
@@ -165,6 +166,12 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | F.6 | Tela de gestão de encomendas (empresa) | P0 | 🟡 | 3.6 |
 | F.7 | Tela de retirada (funcionário) com termo de compromisso | P0 | 🟡 | 7.4 |
 | F.8 | Tela de dashboard | P1 | 🟢 | 8.1 |
+
+---
+
+## MELHORIAS FUTURAS (fora do MVP)
+
+- **Peso da encomenda** (`peso_kg`): campo opcional no cadastro, útil para calcular a ocupação da embarcação. Não faz parte do MVP.
 
 ---
 

@@ -45,13 +45,17 @@ def test_buscar_encomenda_por_id_retorna_none_para_id_inexistente(db_session):
     assert buscar_encomenda_por_id(db_session, 9999) is None
 
 
-def test_buscar_encomenda_por_id_retorna_encomenda_existente(db_session):
+def test_buscar_encomenda_por_id_retorna_encomenda_existente(db_session, rota_com_paradas):
     _, cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session)
     encomenda = criar_encomenda(
         db_session,
         cliente,
         destinatario,
-        EncomendaCreate(destinatario_id=destinatario.id, descricao="Caixa"),
+        EncomendaCreate(
+            destinatario_id=destinatario.id,
+            parada_destino_id=rota_com_paradas.destino.id,
+            descricao="Caixa",
+        ),
     )
 
     encontrada = buscar_encomenda_por_id(db_session, encomenda.id)
@@ -60,13 +64,17 @@ def test_buscar_encomenda_por_id_retorna_encomenda_existente(db_session):
     assert encontrada.id == encomenda.id
 
 
-def test_atualizar_status_encomenda_persiste_no_banco(db_session):
+def test_atualizar_status_encomenda_persiste_no_banco(db_session, rota_com_paradas):
     _, cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session)
     encomenda = criar_encomenda(
         db_session,
         cliente,
         destinatario,
-        EncomendaCreate(destinatario_id=destinatario.id, descricao="Caixa"),
+        EncomendaCreate(
+            destinatario_id=destinatario.id,
+            parada_destino_id=rota_com_paradas.destino.id,
+            descricao="Caixa",
+        ),
     )
 
     atualizar_status_encomenda(db_session, encomenda, StatusEncomenda.EMBARCADA)
@@ -75,7 +83,7 @@ def test_atualizar_status_encomenda_persiste_no_banco(db_session):
     assert recarregada.status == StatusEncomenda.EMBARCADA
 
 
-def test_fluxo_completo_cadastro_codigo_e_mudanca_de_status(client, db_session):
+def test_fluxo_completo_cadastro_codigo_e_mudanca_de_status(client, db_session, rota_com_paradas):
     usuario_cliente, cliente, destinatario = _cadastrar_cliente_com_destinatario(db_session)
     token_cliente = criar_token_acesso({"sub": str(usuario_cliente.id)})
 
@@ -89,7 +97,11 @@ def test_fluxo_completo_cadastro_codigo_e_mudanca_de_status(client, db_session):
     # 1. cadastro da encomenda pelo cliente
     resposta_cadastro = client.post(
         "/encomendas",
-        json={"destinatario_id": destinatario.id, "descricao": "Caixa de ferramentas"},
+        json={
+            "destinatario_id": destinatario.id,
+            "parada_destino_id": rota_com_paradas.destino.id,
+            "descricao": "Caixa de ferramentas",
+        },
         headers={"Authorization": f"Bearer {token_cliente}"},
     )
     assert resposta_cadastro.status_code == 201

@@ -101,6 +101,7 @@ def criar_encomenda(
     nova_encomenda = Encomenda(
         cliente_id=cliente.id,
         destinatario_id=destinatario.id,
+        parada_destino_id=dados.parada_destino_id,
         descricao=dados.descricao,
         codigo_rastreio=gerar_codigo_rastreio_unico(db),
         status=StatusEncomenda.PENDENTE,

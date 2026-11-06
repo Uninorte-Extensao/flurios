@@ -167,9 +167,9 @@ def test_banco_rejeita_status_fora_da_lista_fixa(db_session):
         db_session.commit()
 
 
-def test_cadastrar_encomenda_sucesso(client, db_session):
+def test_cadastrar_encomenda_sucesso(client, db_session, rota_com_paradas):
     cliente, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
 
     response = client.post(
         "/encomendas",
@@ -184,24 +184,26 @@ def test_cadastrar_encomenda_sucesso(client, db_session):
     assert corpo["descricao"] == DADOS_ENCOMENDA["descricao"]
     assert corpo["status"] == "pendente"
     assert corpo["codigo_rastreio"]
+    assert corpo["parada_destino_id"] == rota_com_paradas.destino.id
+    assert corpo["destino_nome"] == "Tefe"
 
 
-def test_cadastrar_encomenda_sem_token_retorna_401(client, db_session):
+def test_cadastrar_encomenda_sem_token_retorna_401(client, db_session, rota_com_paradas):
     _, destinatario = _cadastrar_cliente_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
 
     response = client.post("/encomendas", json=dados)
 
     assert response.status_code == 401
 
 
-def test_cadastrar_encomenda_sem_cadastro_de_cliente_retorna_403(client, db_session):
+def test_cadastrar_encomenda_sem_cadastro_de_cliente_retorna_403(client, db_session, rota_com_paradas):
     usuario = criar_usuario(
         db_session,
         UsuarioCreate(nome="Joao", email="joao@teste.com", senha="123456"),
     )
     token = criar_token_acesso({"sub": str(usuario.id)})
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": 1}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": 1, "parada_destino_id": rota_com_paradas.destino.id}
 
     response = client.post(
         "/encomendas",
@@ -212,9 +214,9 @@ def test_cadastrar_encomenda_sem_cadastro_de_cliente_retorna_403(client, db_sess
     assert response.status_code == 403
 
 
-def test_cadastrar_encomenda_destinatario_inexistente_retorna_404(client, db_session):
+def test_cadastrar_encomenda_destinatario_inexistente_retorna_404(client, db_session, rota_com_paradas):
     _, _, token = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": 9999}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": 9999, "parada_destino_id": rota_com_paradas.destino.id}
 
     response = client.post(
         "/encomendas",
@@ -225,14 +227,14 @@ def test_cadastrar_encomenda_destinatario_inexistente_retorna_404(client, db_ses
     assert response.status_code == 404
 
 
-def test_cadastrar_encomenda_destinatario_de_outro_cliente_retorna_404(client, db_session):
+def test_cadastrar_encomenda_destinatario_de_outro_cliente_retorna_404(client, db_session, rota_com_paradas):
     _, destinatario_maria, _ = _cadastrar_cliente_logado_com_destinatario(
         db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
     )
     _, _, token_joao = _cadastrar_cliente_logado_com_destinatario(
         db_session, email="joao@teste.com", cpf_cliente=CPF_CLIENTE_2
     )
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id, "parada_destino_id": rota_com_paradas.destino.id}
 
     response = client.post(
         "/encomendas",
@@ -243,9 +245,9 @@ def test_cadastrar_encomenda_destinatario_de_outro_cliente_retorna_404(client, d
     assert response.status_code == 404
 
 
-def test_cadastrar_encomenda_gera_codigos_diferentes_para_cada_encomenda(client, db_session):
+def test_cadastrar_encomenda_gera_codigos_diferentes_para_cada_encomenda(client, db_session, rota_com_paradas):
     _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     headers = {"Authorization": f"Bearer {token}"}
 
     primeira = client.post("/encomendas", json=dados, headers=headers)
@@ -256,10 +258,10 @@ def test_cadastrar_encomenda_gera_codigos_diferentes_para_cada_encomenda(client,
     assert primeira.json()["codigo_rastreio"] != segunda.json()["codigo_rastreio"]
 
 
-def test_buscar_encomenda_por_codigo_sucesso(client, db_session):
+def test_buscar_encomenda_por_codigo_sucesso(client, db_session, rota_com_paradas):
     _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
     headers = {"Authorization": f"Bearer {token}"}
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post("/encomendas", json=dados, headers=headers).json()
 
     response = client.get(f"/encomendas/{criada['codigo_rastreio']}", headers=headers)
@@ -268,10 +270,10 @@ def test_buscar_encomenda_por_codigo_sucesso(client, db_session):
     assert response.json()["codigo_rastreio"] == criada["codigo_rastreio"]
 
 
-def test_buscar_encomenda_por_codigo_sem_token_retorna_401(client, db_session):
+def test_buscar_encomenda_por_codigo_sem_token_retorna_401(client, db_session, rota_com_paradas):
     _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
     headers = {"Authorization": f"Bearer {token}"}
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post("/encomendas", json=dados, headers=headers).json()
 
     response = client.get(f"/encomendas/{criada['codigo_rastreio']}")
@@ -290,11 +292,11 @@ def test_buscar_encomenda_por_codigo_inexistente_retorna_404(client, db_session)
     assert response.status_code == 404
 
 
-def test_buscar_encomenda_de_outro_cliente_retorna_404(client, db_session):
+def test_buscar_encomenda_de_outro_cliente_retorna_404(client, db_session, rota_com_paradas):
     _, destinatario_maria, token_maria = _cadastrar_cliente_logado_com_destinatario(
         db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
     )
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas",
         json=dados,
@@ -313,12 +315,12 @@ def test_buscar_encomenda_de_outro_cliente_retorna_404(client, db_session):
     assert response.status_code == 404
 
 
-def test_listar_encomendas_retorna_apenas_as_do_cliente_logado(client, db_session):
+def test_listar_encomendas_retorna_apenas_as_do_cliente_logado(client, db_session, rota_com_paradas):
     _, destinatario_maria, token_maria = _cadastrar_cliente_logado_com_destinatario(
         db_session, email="maria@teste.com", cpf_cliente=CPF_CLIENTE_1
     )
     headers_maria = {"Authorization": f"Bearer {token_maria}"}
-    dados_maria = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id}
+    dados_maria = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_maria.id, "parada_destino_id": rota_com_paradas.destino.id}
     client.post("/encomendas", json=dados_maria, headers=headers_maria)
     client.post("/encomendas", json=dados_maria, headers=headers_maria)
 
@@ -326,7 +328,7 @@ def test_listar_encomendas_retorna_apenas_as_do_cliente_logado(client, db_sessio
         db_session, email="joao@teste.com", cpf_cliente=CPF_CLIENTE_2
     )
     headers_joao = {"Authorization": f"Bearer {token_joao}"}
-    dados_joao = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_joao.id}
+    dados_joao = {**DADOS_ENCOMENDA, "destinatario_id": destinatario_joao.id, "parada_destino_id": rota_com_paradas.destino.id}
     client.post("/encomendas", json=dados_joao, headers=headers_joao)
 
     response = client.get("/encomendas", headers=headers_maria)
@@ -352,9 +354,9 @@ def test_listar_encomendas_sem_token_retorna_401(client):
     assert response.status_code == 401
 
 
-def test_atualizar_status_encomenda_sucesso(client, db_session):
+def test_atualizar_status_encomenda_sucesso(client, db_session, rota_com_paradas):
     _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
     ).json()
@@ -371,9 +373,9 @@ def test_atualizar_status_encomenda_sucesso(client, db_session):
     assert response.json()["status"] == "recebida"
 
 
-def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db_session):
+def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db_session, rota_com_paradas):
     _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
     ).json()
@@ -392,9 +394,9 @@ def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db
     assert response.json()["status"] == "aguardando_embarque"
 
 
-def test_atualizar_status_encomenda_sem_token_retorna_401(client, db_session):
+def test_atualizar_status_encomenda_sem_token_retorna_401(client, db_session, rota_com_paradas):
     _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
     ).json()
@@ -407,9 +409,9 @@ def test_atualizar_status_encomenda_sem_token_retorna_401(client, db_session):
     assert response.status_code == 401
 
 
-def test_atualizar_status_encomenda_cliente_logado_retorna_403(client, db_session):
+def test_atualizar_status_encomenda_cliente_logado_retorna_403(client, db_session, rota_com_paradas):
     _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
     ).json()
@@ -435,9 +437,9 @@ def test_atualizar_status_encomenda_inexistente_retorna_404(client, db_session):
     assert response.status_code == 404
 
 
-def test_atualizar_status_encomenda_status_fora_da_lista_fixa_retorna_422(client, db_session):
+def test_atualizar_status_encomenda_status_fora_da_lista_fixa_retorna_422(client, db_session, rota_com_paradas):
     _, destinatario, token_cliente = _cadastrar_cliente_logado_com_destinatario(db_session)
-    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
     criada = client.post(
         "/encomendas", json=dados, headers={"Authorization": f"Bearer {token_cliente}"}
     ).json()
@@ -451,3 +453,146 @@ def test_atualizar_status_encomenda_status_fora_da_lista_fixa_retorna_422(client
     )
 
     assert response.status_code == 422
+
+
+def test_cadastrar_encomenda_sem_parada_destino_retorna_422(client, db_session, rota_com_paradas):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id}
+
+    response = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 422
+    assert db_session.query(Encomenda).count() == 0
+
+
+def test_cadastrar_encomenda_parada_destino_inexistente_retorna_404(
+    client, db_session, rota_com_paradas
+):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": 9999}
+
+    response = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+    assert db_session.query(Encomenda).count() == 0
+
+
+def test_cadastrar_encomenda_com_parada_de_origem_como_destino_retorna_422(
+    client, db_session, rota_com_paradas
+):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {
+        **DADOS_ENCOMENDA,
+        "destinatario_id": destinatario.id,
+        "parada_destino_id": rota_com_paradas.origem.id,
+    }
+
+    response = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 422
+    assert db_session.query(Encomenda).count() == 0
+
+
+def test_cadastrar_encomenda_aceita_parada_de_qualquer_rota(client, db_session, rota_com_paradas):
+    from app.models.parada import Parada
+    from app.models.rota import Rota
+
+    outra_rota = Rota(nome="Manaus - Parintins")
+    db_session.add(outra_rota)
+    db_session.flush()
+    parintins = Parada(rota_id=outra_rota.id, nome="Parintins", ordem=2)
+    db_session.add(parintins)
+    db_session.commit()
+
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    dados = {
+        **DADOS_ENCOMENDA,
+        "destinatario_id": destinatario.id,
+        "parada_destino_id": parintins.id,
+    }
+
+    response = client.post(
+        "/encomendas", json=dados, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 201
+    assert response.json()["destino_nome"] == "Parintins"
+
+
+def test_buscar_e_listar_encomenda_devolvem_o_destino(client, db_session, rota_com_paradas):
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    headers = {"Authorization": f"Bearer {token}"}
+    dados = {
+        **DADOS_ENCOMENDA,
+        "destinatario_id": destinatario.id,
+        "parada_destino_id": rota_com_paradas.final.id,
+    }
+    criada = client.post("/encomendas", json=dados, headers=headers).json()
+
+    por_codigo = client.get(f"/encomendas/{criada['codigo_rastreio']}", headers=headers).json()
+    lista = client.get("/encomendas", headers=headers).json()
+
+    assert por_codigo["destino_nome"] == "Coari"
+    assert lista[0]["destino_nome"] == "Coari"
+
+
+def test_encomenda_antiga_sem_destino_continua_legivel(client, db_session, rota_com_paradas):
+    """Dados anteriores a migration (parada_destino_id nulo) nao quebram a leitura."""
+    cliente, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+    db_session.add(
+        Encomenda(
+            cliente_id=cliente.id,
+            destinatario_id=destinatario.id,
+            codigo_rastreio="FLXANTIGA001",
+            descricao="Caixa antiga",
+        )
+    )
+    db_session.commit()
+
+    response = client.get("/encomendas", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json()[0]["parada_destino_id"] is None
+    assert response.json()[0]["destino_nome"] is None
+
+
+def test_migration_parada_destino_em_banco_temporario(tmp_path):
+    """Sobe e desce a migration em banco descartavel, nunca no flurios.db."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, inspect
+
+    url = f"sqlite:///{tmp_path / 'migration.db'}"
+    config = Config("alembic.ini")
+    config.set_main_option("sqlalchemy.url", url)
+    engine = create_engine(url)
+
+    command.upgrade(config, "7ceac32dc579")
+    with engine.begin() as conexao:
+        conexao.execute(text("INSERT INTO usuarios (nome, email, senha_hash, ativo, criado_em) "
+                             "VALUES ('A', 'a@a.com', 'x', 1, '2026-01-01')"))
+        conexao.execute(text("INSERT INTO clientes (usuario_id, cpf, telefone, criado_em) "
+                             "VALUES (1, '11122233396', '1', '2026-01-01')"))
+        conexao.execute(text("INSERT INTO destinatarios (cliente_id, nome, cpf, telefone, endereco, municipio, criado_em) "
+                             "VALUES (1, 'D', '22233344405', '1', 'R', 'Tefe', '2026-01-01')"))
+        conexao.execute(text("INSERT INTO encomendas (cliente_id, destinatario_id, codigo_rastreio, descricao, status, criado_em) "
+                             "VALUES (1, 1, 'FLXEXISTENTE1', 'caixa', 'pendente', '2026-01-01')"))
+
+    command.upgrade(config, "head")
+    colunas = {c["name"]: c for c in inspect(engine).get_columns("encomendas")}
+    assert colunas["parada_destino_id"]["nullable"] is True
+    with engine.connect() as conexao:
+        assert conexao.execute(
+            text("SELECT parada_destino_id FROM encomendas WHERE codigo_rastreio = 'FLXEXISTENTE1'")
+        ).scalar() is None
+
+    command.downgrade(config, "7ceac32dc579")
+    assert "parada_destino_id" not in {c["name"] for c in inspect(engine).get_columns("encomendas")}
+
+    engine.dispose()

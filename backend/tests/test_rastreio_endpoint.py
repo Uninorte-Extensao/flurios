@@ -40,12 +40,16 @@ def headers_usuario_sem_perfil(db_session):
 
 
 @pytest.fixture()
-def encomenda_do_cliente(client, headers_cliente):
+def encomenda_do_cliente(client, headers_cliente, rota_com_paradas):
     """Encomenda cadastrada pela API pela cliente Maria (headers_cliente)."""
     destinatario = client.post("/destinatarios", json=DESTINATARIO, headers=headers_cliente).json()
     resposta = client.post(
         "/encomendas",
-        json={"destinatario_id": destinatario["id"], "descricao": "Caixa de ferramentas"},
+        json={
+            "destinatario_id": destinatario["id"],
+            "parada_destino_id": rota_com_paradas.destino.id,
+            "descricao": "Caixa de ferramentas",
+        },
         headers=headers_cliente,
     )
     assert resposta.status_code == 201
