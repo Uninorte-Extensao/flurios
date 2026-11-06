@@ -1,0 +1,28 @@
+/* Cartão das telas de entrada (login e cadastro) */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: var(--espaco-5) var(--espaco-6);
+}
+
+.auth-card__rodape {
+  margin-top: var(--espaco-4);
+  text-align: center;
+}
+
+.auth-card__linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-3);
+}
+
+@media (max-width: 900px) {
+  .auth-card {
+    padding: var(--espaco-4);
+  }
+
+  .auth-card__linha {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
