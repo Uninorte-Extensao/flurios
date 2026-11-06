@@ -6,6 +6,7 @@ import LayoutPublico from '../components/LayoutPublico'
 import { useAuth } from '../hooks/useAuth'
 import CadastroCliente from '../pages/CadastroCliente'
 import AreaCliente from '../pages/cliente/AreaCliente'
+import NovaEncomenda from '../pages/cliente/NovaEncomenda'
 import EmBreve from '../pages/EmBreve'
 import PainelOperacional from '../pages/empresa/PainelOperacional'
 import Login from '../pages/Login'
@@ -66,6 +67,10 @@ export default function AppRoutes() {
       <Route element={<RotaProtegida tipos={['cliente']} />}>
         <Route path="/cliente" element={<AppLayout area="cliente" />}>
           <Route index element={<AreaCliente />} />
+          <Route path="nova-encomenda" element={<NovaEncomenda />} />
+          {/* Provisórias até a F.4 (lista de códigos e linha do tempo). */}
+          <Route path="encomendas" element={<EmBreve titulo="Minhas encomendas" />} />
+          <Route path="encomendas/:codigo" element={<EmBreve titulo="Acompanhar encomenda" />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>
       </Route>

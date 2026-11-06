@@ -149,6 +149,16 @@ textarea {
   background: var(--branco);
 }
 
+.campo__entrada--area {
+  min-height: 96px;
+  padding: var(--espaco-3);
+  resize: vertical;
+}
+
+.campo__entrada:read-only {
+  background: var(--cinza-claro);
+}
+
 .campo__entrada:focus {
   outline: 2px solid var(--azul);
   outline-offset: 0;

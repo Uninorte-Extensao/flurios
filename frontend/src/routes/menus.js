@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Navigation,
   Package,
+  PackagePlus,
   Route,
   Ship,
 } from 'lucide-react'
@@ -36,8 +37,16 @@ export const MENUS = {
     base: '/cliente',
     rotuloUsuario: 'Cliente',
     placeholderBusca: 'Digite seu código de rastreio...',
-    itens: [{ para: '/cliente', rotulo: 'Minhas Encomendas', icone: Package, exato: true }],
-    barraInferior: [{ para: '/cliente', rotulo: 'Início', icone: House, exato: true }],
+    itens: [
+      { para: '/cliente', rotulo: 'Início', icone: House, exato: true },
+      { para: '/cliente/nova-encomenda', rotulo: 'Nova encomenda', icone: PackagePlus },
+      { para: '/cliente/encomendas', rotulo: 'Minhas encomendas', icone: Package },
+    ],
+    barraInferior: [
+      { para: '/cliente', rotulo: 'Início', icone: House, exato: true },
+      { para: '/cliente/nova-encomenda', rotulo: 'Nova encomenda', icone: PackagePlus },
+      { para: '/cliente/encomendas', rotulo: 'Minhas encomendas', icone: Package },
+    ],
     suporte: { para: '/cliente/suporte', rotulo: 'Suporte', icone: CircleHelp },
   },
 }

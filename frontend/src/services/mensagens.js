@@ -10,6 +10,10 @@ const TRADUCOES = {
   'Usuario nao possui cadastro de empresa.': 'Esta conta não é de empresa.',
   'Nao foi possivel validar as credenciais.': 'Sua sessão expirou. Entre novamente.',
   'Acao restrita a administradores.': 'Ação restrita a administradores.',
+  'Destinatario nao encontrado.': 'Destinatário não encontrado.',
+  'Parada de destino nao encontrada.': 'O destino escolhido não existe mais. Atualize a página.',
+  'A parada de origem nao pode ser o destino da encomenda.':
+    'A origem (Manaus) não pode ser o destino da encomenda.',
 }
 
 export function traduzirMensagem(texto, padrao) {
