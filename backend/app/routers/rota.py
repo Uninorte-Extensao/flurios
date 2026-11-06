@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import empresa_logado
+from app.core.deps import empresa_logado, usuario_logado
 from app.db.session import get_db
 from app.models.empresa import Empresa
-from app.schemas.parada import ParadaCreate, ParadaOut, ParadaUpdate
+from app.models.usuario import Usuario
+from app.schemas.parada import DestinoOut, ParadaCreate, ParadaOut, ParadaUpdate
 from app.schemas.rota import RotaCreate, RotaDetalheOut, RotaOut, RotaUpdate
 from app.services.parada import (
     atualizar_parada,
     buscar_parada_da_rota,
     criar_parada,
     excluir_parada,
+    listar_destinos,
     listar_paradas_da_rota,
 )
 from app.services.rota import (
@@ -64,6 +66,19 @@ def listar(
     db: Session = Depends(get_db),
 ):
     return listar_rotas(db)
+
+
+# Declarada antes de "/{rota_id}" para "destinos" nao ser lido como id de rota.
+@router.get("/destinos", response_model=list[DestinoOut])
+def listar_paradas_de_destino(
+    usuario: Usuario = Depends(usuario_logado),
+    db: Session = Depends(get_db),
+):
+    """Destinos possiveis para uma encomenda. Qualquer usuario logado (cliente ou empresa)."""
+    return [
+        DestinoOut(id=parada.id, nome=parada.nome, rota_nome=rota.nome)
+        for parada, rota in listar_destinos(db)
+    ]
 
 
 @router.get("/{rota_id}", response_model=RotaDetalheOut)
