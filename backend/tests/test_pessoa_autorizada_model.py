@@ -7,6 +7,10 @@ from alembic.config import Config
 from app.models.pessoa_autorizada import PessoaAutorizada
 
 
+REVISAO = "b43924236404"  # cria tabela de pessoas autorizadas
+REVISAO_ANTERIOR = "197e66c01666"  # cria tabela de movimentacoes
+
+
 def _nova(encomenda_id, **extra):
     dados = {"encomenda_id": encomenda_id, "nome": "Ana Souza", "cpf": "11122233396"}
     dados.update(extra)
@@ -62,7 +66,7 @@ def test_migration_cria_e_remove_tabela_em_banco_temporario(tmp_path):
     colunas = {c["name"] for c in inspect(engine).get_columns("pessoas_autorizadas")}
     assert colunas == {"id", "encomenda_id", "nome", "cpf", "criado_em"}
 
-    command.downgrade(config, "-1")
+    command.downgrade(config, REVISAO_ANTERIOR)
     assert "pessoas_autorizadas" not in inspect(engine).get_table_names()
 
     engine.dispose()
