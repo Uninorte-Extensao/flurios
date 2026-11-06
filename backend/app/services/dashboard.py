@@ -1,6 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda, StatusEncomenda
 from app.models.viagem import StatusViagem, Viagem
 
@@ -33,3 +34,14 @@ def contar_viagens_por_status(db: Session) -> dict[str, int]:
         contagem[status.value] = total
 
     return contagem
+
+
+def contar_encomendas_por_municipio(db: Session) -> list[tuple[str, int]]:
+    """Encomendas por municipio de destino, do maior para o menor total."""
+    return (
+        db.query(Destinatario.municipio, func.count(Encomenda.id))
+        .join(Encomenda, Encomenda.destinatario_id == Destinatario.id)
+        .group_by(Destinatario.municipio)
+        .order_by(func.count(Encomenda.id).desc(), Destinatario.municipio)
+        .all()
+    )

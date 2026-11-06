@@ -5,8 +5,14 @@ from app.core.deps import empresa_logado
 from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.models.viagem import StatusViagem
-from app.schemas.dashboard import ResumoEncomendasOut, ResumoViagensOut
+from app.schemas.dashboard import (
+    EncomendasPorMunicipioOut,
+    MunicipioContagemOut,
+    ResumoEncomendasOut,
+    ResumoViagensOut,
+)
 from app.services.dashboard import (
+    contar_encomendas_por_municipio,
     contar_encomendas_por_status,
     contar_viagens_por_status,
 )
@@ -35,4 +41,20 @@ def resumo_viagens(
         em_andamento=por_status[StatusViagem.EM_ANDAMENTO.value],
         total=sum(por_status.values()),
         por_status=por_status,
+    )
+
+
+@router.get("/municipios", response_model=EncomendasPorMunicipioOut)
+def encomendas_por_municipio(
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    municipios = [
+        MunicipioContagemOut(municipio=municipio, total=total)
+        for municipio, total in contar_encomendas_por_municipio(db)
+    ]
+
+    return EncomendasPorMunicipioOut(
+        total=sum(m.total for m in municipios),
+        municipios=municipios,
     )
