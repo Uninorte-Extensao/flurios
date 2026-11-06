@@ -2,10 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from app.core.deps import usuario_logado
 from app.core.security import criar_token_acesso
 from app.db.session import get_db
-from app.schemas.usuario import LoginRequest, Token, UsuarioCreate, UsuarioOut
-from app.services.usuario import autenticar, criar_usuario
+from app.models.usuario import Usuario
+from app.schemas.usuario import (
+    LoginRequest,
+    Token,
+    UsuarioCreate,
+    UsuarioMeOut,
+    UsuarioOut,
+)
+from app.services.usuario import autenticar, criar_usuario, montar_usuario_me
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
@@ -49,3 +57,11 @@ def login_formulario(
     access_token = criar_token_acesso({"sub": str(usuario.id)})
 
     return Token(access_token=access_token)
+
+
+@router.get("/me", response_model=UsuarioMeOut)
+def usuario_atual(
+    usuario: Usuario = Depends(usuario_logado),
+    db: Session = Depends(get_db),
+):
+    return montar_usuario_me(db, usuario)
