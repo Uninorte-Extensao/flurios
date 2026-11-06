@@ -8,6 +8,7 @@ from app.routers import (
     empresa,
     encomenda,
     pessoa_autorizada,
+    retirada,
     rota,
     usuario,
     viagem,
@@ -35,6 +36,7 @@ app.include_router(empresa.router)
 app.include_router(destinatario.router)
 app.include_router(encomenda.router)
 app.include_router(pessoa_autorizada.router)
+app.include_router(retirada.router)
 app.include_router(embarcacao.router)
 app.include_router(rota.router)
 app.include_router(viagem.router)
