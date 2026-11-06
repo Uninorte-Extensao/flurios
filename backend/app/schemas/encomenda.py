@@ -6,6 +6,7 @@ from app.models.encomenda import StatusEncomenda
 
 class EncomendaCreate(BaseModel):
     destinatario_id: int
+    parada_destino_id: int
     descricao: str
 
 
@@ -17,6 +18,8 @@ class EncomendaOut(BaseModel):
     id: int
     cliente_id: int
     destinatario_id: int
+    parada_destino_id: int | None
+    destino_nome: str | None
     codigo_rastreio: str
     descricao: str
     status: StatusEncomenda

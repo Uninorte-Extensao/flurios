@@ -4,6 +4,8 @@ from app.models.parada import Parada
 from app.schemas.parada import ParadaCreate, ParadaUpdate
 
 MENSAGEM_ORDEM_REPETIDA = "Ja existe uma parada com essa ordem na rota."
+# A parada de ordem 1 e a origem (Manaus): nunca pode ser destino de encomenda.
+ORDEM_ORIGEM = 1
 
 
 def buscar_parada_da_rota(db: Session, rota_id: int, parada_id: int) -> Parada | None:

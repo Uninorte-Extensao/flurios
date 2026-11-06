@@ -84,7 +84,29 @@ def headers_cliente(db_session):
 
 
 @pytest.fixture()
-def criar_encomenda_no_banco(db_session):
+def rota_com_paradas(db_session):
+    """Rota Manaus -> Tefe -> Coari. `origem` e a parada de ordem 1 (Manaus);
+    `destino` e uma parada valida como destino de encomenda (ordem 2)."""
+    from types import SimpleNamespace
+
+    from app.models.parada import Parada
+    from app.models.rota import Rota
+
+    rota = Rota(nome="Manaus - Coari")
+    db_session.add(rota)
+    db_session.flush()
+
+    origem = Parada(rota_id=rota.id, nome="Manaus", ordem=1)
+    destino = Parada(rota_id=rota.id, nome="Tefe", ordem=2)
+    final = Parada(rota_id=rota.id, nome="Coari", ordem=3)
+    db_session.add_all([origem, destino, final])
+    db_session.commit()
+
+    return SimpleNamespace(rota=rota, origem=origem, destino=destino, final=final)
+
+
+@pytest.fixture()
+def criar_encomenda_no_banco(db_session, rota_com_paradas):
     """Fabrica de encomendas gravadas direto no banco (sem passar pela API).
 
     Cria um cliente e um destinatario na primeira chamada e os reaproveita.
@@ -129,6 +151,7 @@ def criar_encomenda_no_banco(db_session):
         encomenda = Encomenda(
             cliente_id=dono["cliente"].id,
             destinatario_id=dono["destinatario"].id,
+            parada_destino_id=rota_com_paradas.destino.id,
             codigo_rastreio=f"FLU-TESTE-{proximo:04d}",
             descricao="Caixa de ferramentas",
             status=status,

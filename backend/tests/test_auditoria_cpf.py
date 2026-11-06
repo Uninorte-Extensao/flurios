@@ -148,6 +148,12 @@ def _headers(token):
     return {"Authorization": f"Bearer {token}"}
 
 
+def _parada_destino_id(db_session):
+    from app.models.parada import Parada
+
+    return db_session.query(Parada).filter(Parada.ordem == 2).order_by(Parada.id).first().id
+
+
 def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco):
     api = _Gravador(client)
 
@@ -176,7 +182,11 @@ def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomen
     encomenda_resp = api.request(
         "POST",
         "/encomendas",
-        json={"destinatario_id": destinatario_id, "descricao": "Caixa"},
+        json={
+            "destinatario_id": destinatario_id,
+            "parada_destino_id": _parada_destino_id(db_session),
+            "descricao": "Caixa",
+        },
         headers=headers_novo,
     )
     encomenda_id = encomenda_resp.json()["id"]

@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -32,6 +32,13 @@ class Encomenda(Base):
         ForeignKey("destinatarios.id"),
         nullable=False,
     )
+    # Nullable so encomendas antigas (sem destino) continuam validas no banco.
+    # A API exige o campo em POST /encomendas.
+    parada_destino_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("paradas.id"),
+        nullable=True,
+    )
     codigo_rastreio: Mapped[str] = mapped_column(
         String(20),
         unique=True,
@@ -57,3 +64,9 @@ class Encomenda(Base):
         default=datetime.utcnow,
         nullable=False,
     )
+
+    parada_destino = relationship("Parada")
+
+    @property
+    def destino_nome(self) -> str | None:
+        return self.parada_destino.nome if self.parada_destino else None

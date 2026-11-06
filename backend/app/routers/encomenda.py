@@ -12,6 +12,7 @@ from app.services.empresa import buscar_empresa_por_usuario
 from app.services.movimentacao import listar_historico_da_encomenda
 from app.schemas.encomenda import EncomendaCreate, EncomendaOut, EncomendaStatusUpdate
 from app.services.destinatario import buscar_destinatario_do_cliente
+from app.services.parada import ORDEM_ORIGEM, buscar_parada_por_id
 from app.services.encomenda import (
     atualizar_status_encomenda,
     buscar_encomenda_do_cliente,
@@ -36,6 +37,20 @@ def cadastrar_encomenda(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Destinatario nao encontrado.",
+        )
+
+    parada_destino = buscar_parada_por_id(db, dados.parada_destino_id)
+
+    if parada_destino is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parada de destino nao encontrada.",
+        )
+
+    if parada_destino.ordem == ORDEM_ORIGEM:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A parada de origem nao pode ser o destino da encomenda.",
         )
 
     return criar_encomenda(db, cliente, destinatario, dados)
