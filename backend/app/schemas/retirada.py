@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, field_validator
 
 from app.core.cpf import normalizar_cpf
+from app.core.mascaramento import CpfMascarado
 from app.models.encomenda import StatusEncomenda
 
 
@@ -23,8 +24,11 @@ class RetiradaCreate(BaseModel):
 
 
 class RetiradaOut(BaseModel):
+    """Saida da retirada. O CPF de quem retirou sai sempre mascarado (CpfMascarado)."""
+
     id: int
     encomenda_id: int
+    cpf_retirante: CpfMascarado
     termo_aceito: bool
     status_encomenda: StatusEncomenda
     criado_em: datetime
