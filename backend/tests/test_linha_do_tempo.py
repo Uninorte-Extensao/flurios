@@ -33,9 +33,9 @@ def _criar_encomenda(client, headers_cliente, parada_destino_id, descricao="Caix
     return resposta.json()
 
 
-def _status_encomenda(client, headers_empresa, encomenda, novo):
+def _status_encomenda(client, headers_administrador, encomenda, novo):
     resposta = client.patch(
-        f"/encomendas/{encomenda['id']}/status", json={"status": novo}, headers=headers_empresa
+        f"/encomendas/{encomenda['id']}/status", json={"status": novo}, headers=headers_administrador
     )
     assert resposta.status_code == 200
 
@@ -108,22 +108,22 @@ def test_encomenda_recem_cadastrada_tem_linha_do_tempo_com_apenas_pendente(
     assert _resumo(corpo) == [("pendente", None, None)]
 
 
-def test_linha_do_tempo_completa_do_cadastro_a_entrega(client, headers_cliente, headers_empresa, rota_com_paradas):
+def test_linha_do_tempo_completa_do_cadastro_a_entrega(client, headers_cliente, headers_administrador, rota_com_paradas):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
-    rota_id, paradas = _criar_rota(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
+    rota_id, paradas = _criar_rota(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
 
-    _status_encomenda(client, headers_empresa, encomenda, "recebida")
-    _status_encomenda(client, headers_empresa, encomenda, "aguardando_embarque")
-    _associar(client, headers_empresa, viagem_id, encomenda)
-    _status_encomenda(client, headers_empresa, encomenda, "embarcada")
-    _status_viagem(client, headers_empresa, viagem_id, "em_andamento")
-    _localizacao(client, headers_empresa, viagem_id, paradas["Manaus"])
-    _localizacao(client, headers_empresa, viagem_id, paradas["Codajas"])
-    _localizacao(client, headers_empresa, viagem_id, paradas["Tefe"])
-    _status_encomenda(client, headers_empresa, encomenda, "chegou_ao_destino")
-    _status_encomenda(client, headers_empresa, encomenda, "a_retirar")
-    _status_encomenda(client, headers_empresa, encomenda, "entregue")
+    _status_encomenda(client, headers_administrador, encomenda, "recebida")
+    _status_encomenda(client, headers_administrador, encomenda, "aguardando_embarque")
+    _associar(client, headers_administrador, viagem_id, encomenda)
+    _status_encomenda(client, headers_administrador, encomenda, "embarcada")
+    _status_viagem(client, headers_administrador, viagem_id, "em_andamento")
+    _localizacao(client, headers_administrador, viagem_id, paradas["Manaus"])
+    _localizacao(client, headers_administrador, viagem_id, paradas["Codajas"])
+    _localizacao(client, headers_administrador, viagem_id, paradas["Tefe"])
+    _status_encomenda(client, headers_administrador, encomenda, "chegou_ao_destino")
+    _status_encomenda(client, headers_administrador, encomenda, "a_retirar")
+    _status_encomenda(client, headers_administrador, encomenda, "entregue")
 
     corpo = _linha_do_tempo(client, headers_cliente, encomenda)
 
@@ -142,27 +142,27 @@ def test_linha_do_tempo_completa_do_cadastro_a_entrega(client, headers_cliente, 
     ]
 
 
-def test_empresa_e_cliente_veem_a_mesma_linha_do_tempo(client, headers_cliente, headers_empresa, rota_com_paradas):
+def test_empresa_e_cliente_veem_a_mesma_linha_do_tempo(client, headers_cliente, headers_administrador, rota_com_paradas):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
-    _status_encomenda(client, headers_empresa, encomenda, "recebida")
+    _status_encomenda(client, headers_administrador, encomenda, "recebida")
 
     do_cliente = _linha_do_tempo(client, headers_cliente, encomenda)
-    da_empresa = _linha_do_tempo(client, headers_empresa, encomenda)
+    da_empresa = _linha_do_tempo(client, headers_administrador, encomenda)
 
     assert do_cliente == da_empresa
 
 
 def test_cancelamento_de_viagem_aparece_como_imprevisto_com_a_viagem(
-    client, headers_cliente, headers_empresa,
+    client, headers_cliente, headers_administrador,
     rota_com_paradas
 ):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
-    rota_id, paradas = _criar_rota(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
-    _status_encomenda(client, headers_empresa, encomenda, "recebida")
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    rota_id, paradas = _criar_rota(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
+    _status_encomenda(client, headers_administrador, encomenda, "recebida")
+    _associar(client, headers_administrador, viagem_id, encomenda)
 
-    _status_viagem(client, headers_empresa, viagem_id, "cancelada")
+    _status_viagem(client, headers_administrador, viagem_id, "cancelada")
 
     corpo = _linha_do_tempo(client, headers_cliente, encomenda)
     assert corpo["status_atual"] == "imprevisto"
@@ -174,21 +174,21 @@ def test_cancelamento_de_viagem_aparece_como_imprevisto_com_a_viagem(
 
 
 def test_encomenda_realocada_apos_cancelamento_segue_na_nova_viagem(
-    client, headers_cliente, headers_empresa,
+    client, headers_cliente, headers_administrador,
     rota_com_paradas
 ):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
-    rota_id, paradas = _criar_rota(client, headers_empresa)
-    viagem_cancelada = _criar_viagem(client, headers_empresa, rota_id)
-    nova_viagem = _criar_viagem(client, headers_empresa, rota_id)
-    _status_encomenda(client, headers_empresa, encomenda, "embarcada")
-    _associar(client, headers_empresa, viagem_cancelada, encomenda)
-    _status_viagem(client, headers_empresa, viagem_cancelada, "cancelada")
+    rota_id, paradas = _criar_rota(client, headers_administrador)
+    viagem_cancelada = _criar_viagem(client, headers_administrador, rota_id)
+    nova_viagem = _criar_viagem(client, headers_administrador, rota_id)
+    _status_encomenda(client, headers_administrador, encomenda, "embarcada")
+    _associar(client, headers_administrador, viagem_cancelada, encomenda)
+    _status_viagem(client, headers_administrador, viagem_cancelada, "cancelada")
 
-    _associar(client, headers_empresa, nova_viagem, encomenda)
-    _status_encomenda(client, headers_empresa, encomenda, "embarcada")
-    _status_viagem(client, headers_empresa, nova_viagem, "em_andamento")
-    _localizacao(client, headers_empresa, nova_viagem, paradas["Manaus"])
+    _associar(client, headers_administrador, nova_viagem, encomenda)
+    _status_encomenda(client, headers_administrador, encomenda, "embarcada")
+    _status_viagem(client, headers_administrador, nova_viagem, "em_andamento")
+    _localizacao(client, headers_administrador, nova_viagem, paradas["Manaus"])
 
     corpo = _linha_do_tempo(client, headers_cliente, encomenda)
     assert corpo["status_atual"] == "em_transito"
@@ -202,21 +202,21 @@ def test_encomenda_realocada_apos_cancelamento_segue_na_nova_viagem(
 
 
 def test_localizacao_aparece_na_linha_do_tempo_de_cada_encomenda_a_bordo(
-    client, headers_cliente, headers_empresa,
+    client, headers_cliente, headers_administrador,
     rota_com_paradas
 ):
     a_bordo_1 = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id, "Caixa 1")
     a_bordo_2 = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id, "Caixa 2")
     em_terra = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id, "Caixa 3")
-    rota_id, paradas = _criar_rota(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
+    rota_id, paradas = _criar_rota(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
     for encomenda in (a_bordo_1, a_bordo_2):
-        _status_encomenda(client, headers_empresa, encomenda, "embarcada")
-        _associar(client, headers_empresa, viagem_id, encomenda)
-    _associar(client, headers_empresa, viagem_id, em_terra)
-    _status_viagem(client, headers_empresa, viagem_id, "em_andamento")
+        _status_encomenda(client, headers_administrador, encomenda, "embarcada")
+        _associar(client, headers_administrador, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, em_terra)
+    _status_viagem(client, headers_administrador, viagem_id, "em_andamento")
 
-    _localizacao(client, headers_empresa, viagem_id, paradas["Codajas"])
+    _localizacao(client, headers_administrador, viagem_id, paradas["Codajas"])
 
     for encomenda in (a_bordo_1, a_bordo_2):
         assert _resumo(_linha_do_tempo(client, headers_cliente, encomenda))[-1] == (
@@ -228,13 +228,13 @@ def test_localizacao_aparece_na_linha_do_tempo_de_cada_encomenda_a_bordo(
 
 
 def test_linhas_do_tempo_de_encomendas_diferentes_nao_se_misturam(
-    client, headers_cliente, headers_empresa,
+    client, headers_cliente, headers_administrador,
     rota_com_paradas
 ):
     primeira = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id, "Caixa 1")
     segunda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id, "Caixa 2")
 
-    _status_encomenda(client, headers_empresa, primeira, "recebida")
+    _status_encomenda(client, headers_administrador, primeira, "recebida")
 
     assert _resumo(_linha_do_tempo(client, headers_cliente, primeira)) == [
         ("pendente", None, None),
@@ -244,13 +244,13 @@ def test_linhas_do_tempo_de_encomendas_diferentes_nao_se_misturam(
 
 
 def test_repetir_o_mesmo_status_nao_duplica_item_na_linha_do_tempo(
-    client, headers_cliente, headers_empresa,
+    client, headers_cliente, headers_administrador,
     rota_com_paradas
 ):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
 
-    _status_encomenda(client, headers_empresa, encomenda, "recebida")
-    _status_encomenda(client, headers_empresa, encomenda, "recebida")
+    _status_encomenda(client, headers_administrador, encomenda, "recebida")
+    _status_encomenda(client, headers_administrador, encomenda, "recebida")
 
     assert _resumo(_linha_do_tempo(client, headers_cliente, encomenda)) == [
         ("pendente", None, None),
@@ -258,11 +258,11 @@ def test_repetir_o_mesmo_status_nao_duplica_item_na_linha_do_tempo(
     ]
 
 
-def test_ordem_e_estavel_com_muitas_movimentacoes(client, headers_cliente, headers_empresa, rota_com_paradas):
+def test_ordem_e_estavel_com_muitas_movimentacoes(client, headers_cliente, headers_administrador, rota_com_paradas):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
     sequencia = ["recebida", "aguardando_embarque", "imprevisto"] * 4
     for novo in sequencia:
-        _status_encomenda(client, headers_empresa, encomenda, novo)
+        _status_encomenda(client, headers_administrador, encomenda, novo)
 
     corpo = _linha_do_tempo(client, headers_cliente, encomenda)
 
@@ -270,16 +270,16 @@ def test_ordem_e_estavel_com_muitas_movimentacoes(client, headers_cliente, heade
     assert [m["id"] for m in corpo["historico"]] == sorted(m["id"] for m in corpo["historico"])
 
 
-def test_linha_do_tempo_nao_expoe_dados_pessoais(client, headers_cliente, headers_empresa, rota_com_paradas):
+def test_linha_do_tempo_nao_expoe_dados_pessoais(client, headers_cliente, headers_administrador, rota_com_paradas):
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
-    rota_id, paradas = _criar_rota(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
-    _status_encomenda(client, headers_empresa, encomenda, "embarcada")
-    _associar(client, headers_empresa, viagem_id, encomenda)
-    _status_viagem(client, headers_empresa, viagem_id, "em_andamento")
-    _localizacao(client, headers_empresa, viagem_id, paradas["Manaus"])
+    rota_id, paradas = _criar_rota(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
+    _status_encomenda(client, headers_administrador, encomenda, "embarcada")
+    _associar(client, headers_administrador, viagem_id, encomenda)
+    _status_viagem(client, headers_administrador, viagem_id, "em_andamento")
+    _localizacao(client, headers_administrador, viagem_id, paradas["Manaus"])
 
-    for headers in (headers_cliente, headers_empresa):
+    for headers in (headers_cliente, headers_administrador):
         texto = json.dumps(_linha_do_tempo(client, headers, encomenda))
         for dado_pessoal in (
             DESTINATARIO["cpf"],
@@ -292,7 +292,7 @@ def test_linha_do_tempo_nao_expoe_dados_pessoais(client, headers_cliente, header
             assert dado_pessoal not in texto
 
 
-@pytest.mark.parametrize("headers_nome", ["headers_cliente", "headers_empresa"])
+@pytest.mark.parametrize("headers_nome", ["headers_cliente", "headers_administrador"])
 def test_rastreio_exige_login_mesmo_com_codigo_valido(
     request, client, headers_cliente, headers_nome,
     rota_com_paradas

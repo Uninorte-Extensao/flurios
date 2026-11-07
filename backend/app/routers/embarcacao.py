@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import empresa_logado
+from app.core.deps import empresa_administrador, empresa_logado
 from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.schemas.embarcacao import EmbarcacaoCreate, EmbarcacaoOut, EmbarcacaoUpdate
@@ -31,7 +31,7 @@ def _embarcacao_ou_404(db: Session, embarcacao_id: int):
 @router.post("", response_model=EmbarcacaoOut, status_code=status.HTTP_201_CREATED)
 def cadastrar_embarcacao(
     dados: EmbarcacaoCreate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     return criar_embarcacao(db, dados)
@@ -58,7 +58,7 @@ def obter_embarcacao(
 def editar_embarcacao(
     embarcacao_id: int,
     dados: EmbarcacaoUpdate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     embarcacao = _embarcacao_ou_404(db, embarcacao_id)
@@ -69,7 +69,7 @@ def editar_embarcacao(
 @router.delete("/{embarcacao_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remover_embarcacao(
     embarcacao_id: int,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     embarcacao = _embarcacao_ou_404(db, embarcacao_id)

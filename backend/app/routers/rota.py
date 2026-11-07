@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import empresa_logado, usuario_logado
+from app.core.deps import empresa_administrador, empresa_logado, usuario_logado
 from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.models.usuario import Usuario
 from app.schemas.parada import DestinoOut, ParadaCreate, ParadaOut, ParadaUpdate
 from app.schemas.rota import RotaCreate, RotaDetalheOut, RotaOut, RotaUpdate
 from app.services.parada import (
+    ParadaInvalida,
     atualizar_parada,
     buscar_parada_da_rota,
     criar_parada,
@@ -54,7 +55,7 @@ def _parada_ou_404(db: Session, rota_id: int, parada_id: int):
 @router.post("", response_model=RotaOut, status_code=status.HTTP_201_CREATED)
 def cadastrar_rota(
     dados: RotaCreate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     return criar_rota(db, dados)
@@ -100,7 +101,7 @@ def obter_rota(
 def editar_rota(
     rota_id: int,
     dados: RotaUpdate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     return atualizar_rota(db, _rota_ou_404(db, rota_id), dados)
@@ -109,7 +110,7 @@ def editar_rota(
 @router.delete("/{rota_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remover_rota(
     rota_id: int,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     try:
@@ -128,13 +129,17 @@ def remover_rota(
 def cadastrar_parada(
     rota_id: int,
     dados: ParadaCreate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     _rota_ou_404(db, rota_id)
 
     try:
         return criar_parada(db, rota_id, dados)
+    except ParadaInvalida as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+        )
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
@@ -155,13 +160,17 @@ def editar_parada(
     rota_id: int,
     parada_id: int,
     dados: ParadaUpdate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
     parada = _parada_ou_404(db, rota_id, parada_id)
 
     try:
         return atualizar_parada(db, parada, dados)
+    except ParadaInvalida as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(erro)
+        )
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
@@ -172,9 +181,14 @@ def editar_parada(
 def remover_parada(
     rota_id: int,
     parada_id: int,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_administrador),
     db: Session = Depends(get_db),
 ):
-    excluir_parada(db, _parada_ou_404(db, rota_id, parada_id))
+    parada = _parada_ou_404(db, rota_id, parada_id)
+
+    try:
+        excluir_parada(db, parada)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

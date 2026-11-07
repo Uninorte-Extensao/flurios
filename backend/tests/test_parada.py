@@ -35,8 +35,8 @@ def test_criar_parada_com_ordem_repetida_na_mesma_rota_falha(db_session):
     rota = _criar_rota(db_session)
     criar_parada(db_session, rota.id, ParadaCreate(nome="Manaus", ordem=1))
 
-    with pytest.raises(ValueError):
-        criar_parada(db_session, rota.id, ParadaCreate(nome="Manacapuru", ordem=1))
+    with pytest.raises(ValueError, match="Ja existe uma parada com essa ordem"):
+        criar_parada(db_session, rota.id, ParadaCreate(nome="Manaus", ordem=1))
 
 
 def test_mesma_ordem_em_rotas_diferentes_e_permitida(db_session):
@@ -52,19 +52,20 @@ def test_mesma_ordem_em_rotas_diferentes_e_permitida(db_session):
 def test_atualizar_parada_para_ordem_ocupada_falha(db_session):
     rota = _criar_rota(db_session)
     criar_parada(db_session, rota.id, ParadaCreate(nome="Manaus", ordem=1))
-    segunda = criar_parada(db_session, rota.id, ParadaCreate(nome="Manacapuru", ordem=2))
+    criar_parada(db_session, rota.id, ParadaCreate(nome="Manacapuru", ordem=2))
+    terceira = criar_parada(db_session, rota.id, ParadaCreate(nome="Coari", ordem=3))
 
-    with pytest.raises(ValueError):
-        atualizar_parada(db_session, segunda, ParadaUpdate(ordem=1))
+    with pytest.raises(ValueError, match="Ja existe uma parada com essa ordem"):
+        atualizar_parada(db_session, terceira, ParadaUpdate(ordem=2))
 
 
 def test_atualizar_parada_mantendo_a_propria_ordem_e_permitido(db_session):
     rota = _criar_rota(db_session)
-    parada = criar_parada(db_session, rota.id, ParadaCreate(nome="Manaus", ordem=1))
+    parada = criar_parada(db_session, rota.id, ParadaCreate(nome="Manacapuru", ordem=2))
 
-    atualizada = atualizar_parada(db_session, parada, ParadaUpdate(nome="Manaus Porto", ordem=1))
+    atualizada = atualizar_parada(db_session, parada, ParadaUpdate(nome="Manacapuru Porto", ordem=2))
 
-    assert atualizada.nome == "Manaus Porto"
+    assert atualizada.nome == "Manacapuru Porto"
 
 
 def test_banco_rejeita_ordem_repetida_na_mesma_rota(db_session):
