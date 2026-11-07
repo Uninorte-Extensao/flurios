@@ -98,10 +98,10 @@ def _dados_viagem(client, headers):
     }
 
 
-def test_empresa_cadastra_viagem_programada(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_empresa_cadastra_viagem_programada(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
 
-    resposta = client.post("/viagens", json=dados, headers=headers_empresa)
+    resposta = client.post("/viagens", json=dados, headers=headers_administrador)
 
     assert resposta.status_code == 201
     corpo = resposta.json()
@@ -111,46 +111,46 @@ def test_empresa_cadastra_viagem_programada(client, headers_empresa):
     assert corpo["status"] == "programada"
 
 
-def test_cadastro_ignora_status_enviado_pelo_cliente_http(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_cadastro_ignora_status_enviado_pelo_cliente_http(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
 
     resposta = client.post(
-        "/viagens", json={**dados, "status": "concluida"}, headers=headers_empresa
+        "/viagens", json={**dados, "status": "concluida"}, headers=headers_administrador
     )
 
     assert resposta.status_code == 201
     assert resposta.json()["status"] == "programada"
 
 
-def test_cadastro_com_embarcacao_inexistente_retorna_404(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_cadastro_com_embarcacao_inexistente_retorna_404(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
 
     resposta = client.post(
-        "/viagens", json={**dados, "embarcacao_id": 999}, headers=headers_empresa
+        "/viagens", json={**dados, "embarcacao_id": 999}, headers=headers_administrador
     )
 
     assert resposta.status_code == 404
     assert resposta.json()["detail"] == "Embarcacao nao encontrada."
 
 
-def test_cadastro_com_rota_inexistente_retorna_404(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_cadastro_com_rota_inexistente_retorna_404(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
 
     resposta = client.post(
-        "/viagens", json={**dados, "rota_id": 999}, headers=headers_empresa
+        "/viagens", json={**dados, "rota_id": 999}, headers=headers_administrador
     )
 
     assert resposta.status_code == 404
     assert resposta.json()["detail"] == "Rota nao encontrada."
 
 
-def test_cadastro_com_dados_invalidos_retorna_422(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_cadastro_com_dados_invalidos_retorna_422(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
 
     sem_data = {k: v for k, v in dados.items() if k != "data_saida"}
-    assert client.post("/viagens", json=sem_data, headers=headers_empresa).status_code == 422
+    assert client.post("/viagens", json=sem_data, headers=headers_administrador).status_code == 422
     data_ruim = {**dados, "data_saida": "amanha"}
-    assert client.post("/viagens", json=data_ruim, headers=headers_empresa).status_code == 422
+    assert client.post("/viagens", json=data_ruim, headers=headers_administrador).status_code == 422
 
 
 def test_cadastro_de_viagem_sem_login_retorna_401(client):
@@ -180,14 +180,14 @@ def _definir_status_viagem(db_session, viagem_id, novo_status):
     db_session.commit()
 
 
-def test_empresa_associa_encomenda_a_viagem(client, headers_empresa, criar_encomenda_no_banco):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_empresa_associa_encomenda_a_viagem(client, headers_administrador, criar_encomenda_no_banco):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
 
     resposta = client.post(
         f"/viagens/{viagem_id}/encomendas",
         json={"encomenda_id": encomenda.id},
-        headers=headers_empresa,
+        headers=headers_administrador,
     )
 
     assert resposta.status_code == 201
@@ -196,15 +196,15 @@ def test_empresa_associa_encomenda_a_viagem(client, headers_empresa, criar_encom
 
 
 def test_associar_nao_altera_status_da_encomenda(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
 
     client.post(
         f"/viagens/{viagem_id}/encomendas",
         json={"encomenda_id": encomenda.id},
-        headers=headers_empresa,
+        headers=headers_administrador,
     )
     db_session.refresh(encomenda)
 
@@ -212,95 +212,95 @@ def test_associar_nao_altera_status_da_encomenda(
 
 
 def test_viagem_em_andamento_aceita_encomenda(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     _definir_status_viagem(db_session, viagem_id, StatusViagem.EM_ANDAMENTO)
     encomenda = criar_encomenda_no_banco()
 
     resposta = client.post(
         f"/viagens/{viagem_id}/encomendas",
         json={"encomenda_id": encomenda.id},
-        headers=headers_empresa,
+        headers=headers_administrador,
     )
 
     assert resposta.status_code == 201
 
 
-def test_varias_encomendas_na_mesma_viagem(client, headers_empresa, criar_encomenda_no_banco):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_varias_encomendas_na_mesma_viagem(client, headers_administrador, criar_encomenda_no_banco):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
 
     for _ in range(2):
         encomenda = criar_encomenda_no_banco()
         resposta = client.post(
             f"/viagens/{viagem_id}/encomendas",
             json={"encomenda_id": encomenda.id},
-            headers=headers_empresa,
+            headers=headers_administrador,
         )
         assert resposta.status_code == 201
 
 
 def test_mesma_encomenda_nao_entra_em_duas_viagens_ativas(
-    client, headers_empresa, criar_encomenda_no_banco
+    client, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_a = _criar_viagem_api(client, headers_empresa)
-    viagem_b = _criar_viagem_api(client, headers_empresa)
+    viagem_a = _criar_viagem_api(client, headers_administrador)
+    viagem_b = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
     corpo = {"encomenda_id": encomenda.id}
 
-    assert client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_empresa).status_code == 201
+    assert client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_administrador).status_code == 201
 
-    outra_viagem = client.post(f"/viagens/{viagem_b}/encomendas", json=corpo, headers=headers_empresa)
+    outra_viagem = client.post(f"/viagens/{viagem_b}/encomendas", json=corpo, headers=headers_administrador)
     assert outra_viagem.status_code == 409
     assert outra_viagem.json()["detail"] == "Encomenda ja esta associada a uma viagem ativa."
 
-    mesma_viagem = client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_empresa)
+    mesma_viagem = client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_administrador)
     assert mesma_viagem.status_code == 409
 
 
 def test_encomenda_pode_ser_realocada_apos_viagem_deixar_de_estar_ativa(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_a = _criar_viagem_api(client, headers_empresa)
-    viagem_b = _criar_viagem_api(client, headers_empresa)
+    viagem_a = _criar_viagem_api(client, headers_administrador)
+    viagem_b = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
     corpo = {"encomenda_id": encomenda.id}
-    client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_empresa)
+    client.post(f"/viagens/{viagem_a}/encomendas", json=corpo, headers=headers_administrador)
 
     _definir_status_viagem(db_session, viagem_a, StatusViagem.CANCELADA)
 
-    resposta = client.post(f"/viagens/{viagem_b}/encomendas", json=corpo, headers=headers_empresa)
+    resposta = client.post(f"/viagens/{viagem_b}/encomendas", json=corpo, headers=headers_administrador)
     assert resposta.status_code == 201
 
 
 @pytest.mark.parametrize("status_final", [StatusViagem.CONCLUIDA, StatusViagem.CANCELADA])
 def test_viagem_concluida_ou_cancelada_nao_aceita_encomenda(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, status_final
+    client, db_session, headers_administrador, criar_encomenda_no_banco, status_final
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     _definir_status_viagem(db_session, viagem_id, status_final)
     encomenda = criar_encomenda_no_banco()
 
     resposta = client.post(
         f"/viagens/{viagem_id}/encomendas",
         json={"encomenda_id": encomenda.id},
-        headers=headers_empresa,
+        headers=headers_administrador,
     )
 
     assert resposta.status_code == 409
 
 
 def test_associar_com_viagem_ou_encomenda_inexistente_retorna_404(
-    client, headers_empresa, criar_encomenda_no_banco
+    client, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
 
-    sem_viagem = client.post("/viagens/999/encomendas", json={"encomenda_id": encomenda.id}, headers=headers_empresa)
+    sem_viagem = client.post("/viagens/999/encomendas", json={"encomenda_id": encomenda.id}, headers=headers_administrador)
     assert sem_viagem.status_code == 404
     assert sem_viagem.json()["detail"] == "Viagem nao encontrada."
 
-    sem_encomenda = client.post(f"/viagens/{viagem_id}/encomendas", json={"encomenda_id": 999}, headers=headers_empresa)
+    sem_encomenda = client.post(f"/viagens/{viagem_id}/encomendas", json={"encomenda_id": 999}, headers=headers_administrador)
     assert sem_encomenda.status_code == 404
     assert sem_encomenda.json()["detail"] == "Encomenda nao encontrada."
 
@@ -321,25 +321,25 @@ def _patch_status(client, headers, viagem_id, novo_status):
     )
 
 
-def test_fluxo_completo_programada_em_andamento_concluida(client, headers_empresa):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_fluxo_completo_programada_em_andamento_concluida(client, headers_administrador):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
 
-    em_andamento = _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+    em_andamento = _patch_status(client, headers_administrador, viagem_id, "em_andamento")
     assert em_andamento.status_code == 200
     assert em_andamento.json()["status"] == "em_andamento"
 
-    concluida = _patch_status(client, headers_empresa, viagem_id, "concluida")
+    concluida = _patch_status(client, headers_administrador, viagem_id, "concluida")
     assert concluida.status_code == 200
     assert concluida.json()["status"] == "concluida"
 
 
 @pytest.mark.parametrize("passos", [[], ["em_andamento"]])
-def test_viagem_pode_ser_cancelada_se_programada_ou_em_andamento(client, headers_empresa, passos):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_viagem_pode_ser_cancelada_se_programada_ou_em_andamento(client, headers_administrador, passos):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     for passo in passos:
-        assert _patch_status(client, headers_empresa, viagem_id, passo).status_code == 200
+        assert _patch_status(client, headers_administrador, viagem_id, passo).status_code == 200
 
-    resposta = _patch_status(client, headers_empresa, viagem_id, "cancelada")
+    resposta = _patch_status(client, headers_administrador, viagem_id, "cancelada")
 
     assert resposta.status_code == 200
     assert resposta.json()["status"] == "cancelada"
@@ -358,14 +358,14 @@ def test_viagem_pode_ser_cancelada_se_programada_ou_em_andamento(client, headers
     ],
 )
 def test_transicoes_invalidas_retornam_409_e_nao_alteram_a_viagem(
-    client, db_session, headers_empresa, caminho, destino
+    client, db_session, headers_administrador, caminho, destino
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     for passo in caminho:
-        assert _patch_status(client, headers_empresa, viagem_id, passo).status_code == 200
+        assert _patch_status(client, headers_administrador, viagem_id, passo).status_code == 200
     status_antes = caminho[-1] if caminho else "programada"
 
-    resposta = _patch_status(client, headers_empresa, viagem_id, destino)
+    resposta = _patch_status(client, headers_administrador, viagem_id, destino)
 
     assert resposta.status_code == 409
     assert "Transicao de status invalida" in resposta.json()["detail"]
@@ -373,14 +373,14 @@ def test_transicoes_invalidas_retornam_409_e_nao_alteram_a_viagem(
     assert db_session.get(Viagem, viagem_id).status.value == status_antes
 
 
-def test_status_desconhecido_retorna_422(client, headers_empresa):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_status_desconhecido_retorna_422(client, headers_administrador):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
 
-    assert _patch_status(client, headers_empresa, viagem_id, "voando").status_code == 422
+    assert _patch_status(client, headers_administrador, viagem_id, "voando").status_code == 422
 
 
-def test_atualizar_status_de_viagem_inexistente_retorna_404(client, headers_empresa):
-    resposta = _patch_status(client, headers_empresa, 999, "em_andamento")
+def test_atualizar_status_de_viagem_inexistente_retorna_404(client, headers_administrador):
+    resposta = _patch_status(client, headers_administrador, 999, "em_andamento")
 
     assert resposta.status_code == 404
     assert resposta.json()["detail"] == "Viagem nao encontrada."
@@ -406,18 +406,18 @@ def _associar(client, headers, viagem_id, encomenda):
 
 
 def test_cancelar_viagem_marca_encomendas_associadas_como_imprevisto(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomendas = [
         criar_encomenda_no_banco(StatusEncomenda.PENDENTE),
         criar_encomenda_no_banco(StatusEncomenda.EMBARCADA),
         criar_encomenda_no_banco(StatusEncomenda.EM_TRANSITO),
     ]
     for encomenda in encomendas:
-        _associar(client, headers_empresa, viagem_id, encomenda)
+        _associar(client, headers_administrador, viagem_id, encomenda)
 
-    resposta = _patch_status(client, headers_empresa, viagem_id, "cancelada")
+    resposta = _patch_status(client, headers_administrador, viagem_id, "cancelada")
 
     assert resposta.status_code == 200
     assert resposta.json()["status"] == "cancelada"
@@ -426,29 +426,29 @@ def test_cancelar_viagem_marca_encomendas_associadas_como_imprevisto(
 
 
 def test_cancelar_viagem_em_andamento_tambem_marca_imprevisto(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EM_TRANSITO)
-    _associar(client, headers_empresa, viagem_id, encomenda)
-    _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+    _associar(client, headers_administrador, viagem_id, encomenda)
+    _patch_status(client, headers_administrador, viagem_id, "em_andamento")
 
-    assert _patch_status(client, headers_empresa, viagem_id, "cancelada").status_code == 200
+    assert _patch_status(client, headers_administrador, viagem_id, "cancelada").status_code == 200
 
     db_session.refresh(encomenda)
     assert encomenda.status == StatusEncomenda.IMPREVISTO
 
 
 def test_cancelar_viagem_nao_altera_encomenda_ja_entregue(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     entregue = criar_encomenda_no_banco(StatusEncomenda.ENTREGUE)
     pendente = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
-    _associar(client, headers_empresa, viagem_id, entregue)
-    _associar(client, headers_empresa, viagem_id, pendente)
+    _associar(client, headers_administrador, viagem_id, entregue)
+    _associar(client, headers_administrador, viagem_id, pendente)
 
-    _patch_status(client, headers_empresa, viagem_id, "cancelada")
+    _patch_status(client, headers_administrador, viagem_id, "cancelada")
 
     db_session.expire_all()
     assert entregue.status == StatusEncomenda.ENTREGUE
@@ -456,17 +456,17 @@ def test_cancelar_viagem_nao_altera_encomenda_ja_entregue(
 
 
 def test_cancelar_viagem_nao_afeta_encomendas_de_outras_viagens_nem_sem_viagem(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_cancelada = _criar_viagem_api(client, headers_empresa)
-    outra_viagem = _criar_viagem_api(client, headers_empresa)
+    viagem_cancelada = _criar_viagem_api(client, headers_administrador)
+    outra_viagem = _criar_viagem_api(client, headers_administrador)
     da_cancelada = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
     da_outra = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
     sem_viagem = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
-    _associar(client, headers_empresa, viagem_cancelada, da_cancelada)
-    _associar(client, headers_empresa, outra_viagem, da_outra)
+    _associar(client, headers_administrador, viagem_cancelada, da_cancelada)
+    _associar(client, headers_administrador, outra_viagem, da_outra)
 
-    _patch_status(client, headers_empresa, viagem_cancelada, "cancelada")
+    _patch_status(client, headers_administrador, viagem_cancelada, "cancelada")
 
     db_session.expire_all()
     assert da_cancelada.status == StatusEncomenda.IMPREVISTO
@@ -476,45 +476,45 @@ def test_cancelar_viagem_nao_afeta_encomendas_de_outras_viagens_nem_sem_viagem(
 
 @pytest.mark.parametrize("novo_status", ["em_andamento", "concluida"])
 def test_outras_transicoes_nao_alteram_status_das_encomendas(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, novo_status
+    client, db_session, headers_administrador, criar_encomenda_no_banco, novo_status
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, encomenda)
     if novo_status == "concluida":
-        _patch_status(client, headers_empresa, viagem_id, "em_andamento")
+        _patch_status(client, headers_administrador, viagem_id, "em_andamento")
 
-    assert _patch_status(client, headers_empresa, viagem_id, novo_status).status_code == 200
+    assert _patch_status(client, headers_administrador, viagem_id, novo_status).status_code == 200
 
     db_session.refresh(encomenda)
     assert encomenda.status == StatusEncomenda.EMBARCADA
 
 
 def test_cancelamento_invalido_nao_altera_encomendas(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
-    _patch_status(client, headers_empresa, viagem_id, "em_andamento")
-    _patch_status(client, headers_empresa, viagem_id, "concluida")
+    _associar(client, headers_administrador, viagem_id, encomenda)
+    _patch_status(client, headers_administrador, viagem_id, "em_andamento")
+    _patch_status(client, headers_administrador, viagem_id, "concluida")
 
-    assert _patch_status(client, headers_empresa, viagem_id, "cancelada").status_code == 409
+    assert _patch_status(client, headers_administrador, viagem_id, "cancelada").status_code == 409
 
     db_session.refresh(encomenda)
     assert encomenda.status == StatusEncomenda.EMBARCADA
 
 
 def test_encomenda_imprevisto_pode_ser_realocada_em_outra_viagem(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_cancelada = _criar_viagem_api(client, headers_empresa)
-    nova_viagem = _criar_viagem_api(client, headers_empresa)
+    viagem_cancelada = _criar_viagem_api(client, headers_administrador)
+    nova_viagem = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
-    _associar(client, headers_empresa, viagem_cancelada, encomenda)
-    _patch_status(client, headers_empresa, viagem_cancelada, "cancelada")
+    _associar(client, headers_administrador, viagem_cancelada, encomenda)
+    _patch_status(client, headers_administrador, viagem_cancelada, "cancelada")
 
-    _associar(client, headers_empresa, nova_viagem, encomenda)
+    _associar(client, headers_administrador, nova_viagem, encomenda)
 
     db_session.refresh(encomenda)
     assert encomenda.status == StatusEncomenda.IMPREVISTO
@@ -523,33 +523,33 @@ def test_encomenda_imprevisto_pode_ser_realocada_em_outra_viagem(
 # ---------- T5.6: GET /viagens (filtro por status) ----------
 
 
-def test_lista_vazia_quando_nao_ha_viagens(client, headers_empresa):
-    resposta = client.get("/viagens", headers=headers_empresa)
+def test_lista_vazia_quando_nao_ha_viagens(client, headers_administrador):
+    resposta = client.get("/viagens", headers=headers_administrador)
 
     assert resposta.status_code == 200
     assert resposta.json() == []
 
 
-def test_lista_todas_as_viagens_da_mais_recente_para_a_mais_antiga(client, headers_empresa):
-    antiga = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-01T08:00:00")
-    recente = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-20T08:00:00")
-    meio = _criar_viagem_api(client, headers_empresa, data_saida="2026-12-10T08:00:00")
+def test_lista_todas_as_viagens_da_mais_recente_para_a_mais_antiga(client, headers_administrador):
+    antiga = _criar_viagem_api(client, headers_administrador, data_saida="2026-12-01T08:00:00")
+    recente = _criar_viagem_api(client, headers_administrador, data_saida="2026-12-20T08:00:00")
+    meio = _criar_viagem_api(client, headers_administrador, data_saida="2026-12-10T08:00:00")
 
-    resposta = client.get("/viagens", headers=headers_empresa)
+    resposta = client.get("/viagens", headers=headers_administrador)
 
     assert resposta.status_code == 200
     assert [v["id"] for v in resposta.json()] == [recente, meio, antiga]
 
 
-def test_filtra_viagens_por_status(client, headers_empresa):
-    programada = _criar_viagem_api(client, headers_empresa)
-    em_andamento = _criar_viagem_api(client, headers_empresa)
-    cancelada = _criar_viagem_api(client, headers_empresa)
-    _patch_status(client, headers_empresa, em_andamento, "em_andamento")
-    _patch_status(client, headers_empresa, cancelada, "cancelada")
+def test_filtra_viagens_por_status(client, headers_administrador):
+    programada = _criar_viagem_api(client, headers_administrador)
+    em_andamento = _criar_viagem_api(client, headers_administrador)
+    cancelada = _criar_viagem_api(client, headers_administrador)
+    _patch_status(client, headers_administrador, em_andamento, "em_andamento")
+    _patch_status(client, headers_administrador, cancelada, "cancelada")
 
     def ids(filtro):
-        resposta = client.get(f"/viagens?status={filtro}", headers=headers_empresa)
+        resposta = client.get(f"/viagens?status={filtro}", headers=headers_administrador)
         assert resposta.status_code == 200
         return {v["id"] for v in resposta.json()}
 
@@ -559,8 +559,8 @@ def test_filtra_viagens_por_status(client, headers_empresa):
     assert ids("concluida") == set()
 
 
-def test_filtro_com_status_invalido_retorna_422(client, headers_empresa):
-    assert client.get("/viagens?status=voando", headers=headers_empresa).status_code == 422
+def test_filtro_com_status_invalido_retorna_422(client, headers_administrador):
+    assert client.get("/viagens?status=voando", headers=headers_administrador).status_code == 422
 
 
 def test_listagem_de_viagens_exige_empresa_logada(client, headers_cliente):
@@ -571,17 +571,17 @@ def test_listagem_de_viagens_exige_empresa_logada(client, headers_cliente):
 # ---------- T5.7: GET /viagens/{id} ----------
 
 
-def test_detalhe_da_viagem_traz_embarcacao_e_rota_com_paradas(client, headers_empresa):
-    dados = _dados_viagem(client, headers_empresa)
+def test_detalhe_da_viagem_traz_embarcacao_e_rota_com_paradas(client, headers_administrador):
+    dados = _dados_viagem(client, headers_administrador)
     for nome, ordem in [("Parintins", 2), ("Manaus", 1)]:
         client.post(
             f"/rotas/{dados['rota_id']}/paradas",
             json={"nome": nome, "ordem": ordem},
-            headers=headers_empresa,
+            headers=headers_administrador,
         )
-    viagem_id = client.post("/viagens", json=dados, headers=headers_empresa).json()["id"]
+    viagem_id = client.post("/viagens", json=dados, headers=headers_administrador).json()["id"]
 
-    resposta = client.get(f"/viagens/{viagem_id}", headers=headers_empresa)
+    resposta = client.get(f"/viagens/{viagem_id}", headers=headers_administrador)
 
     assert resposta.status_code == 200
     corpo = resposta.json()
@@ -596,8 +596,8 @@ def test_detalhe_da_viagem_traz_embarcacao_e_rota_com_paradas(client, headers_em
     assert [p["nome"] for p in corpo["rota"]["paradas"]] == ["Manaus", "Parintins"]
 
 
-def test_detalhe_de_viagem_inexistente_retorna_404(client, headers_empresa):
-    resposta = client.get("/viagens/999", headers=headers_empresa)
+def test_detalhe_de_viagem_inexistente_retorna_404(client, headers_administrador):
+    resposta = client.get("/viagens/999", headers=headers_administrador)
 
     assert resposta.status_code == 404
     assert resposta.json()["detail"] == "Viagem nao encontrada."
@@ -612,19 +612,19 @@ def test_detalhe_da_viagem_exige_empresa_logada(client, headers_cliente):
 
 
 def test_lista_apenas_as_encomendas_associadas_a_viagem(
-    client, headers_empresa, criar_encomenda_no_banco
+    client, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
-    outra_viagem = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
+    outra_viagem = _criar_viagem_api(client, headers_administrador)
     primeira = criar_encomenda_no_banco()
     segunda = criar_encomenda_no_banco()
     de_outra = criar_encomenda_no_banco()
     criar_encomenda_no_banco()  # sem viagem
-    _associar(client, headers_empresa, viagem_id, segunda)
-    _associar(client, headers_empresa, viagem_id, primeira)
-    _associar(client, headers_empresa, outra_viagem, de_outra)
+    _associar(client, headers_administrador, viagem_id, segunda)
+    _associar(client, headers_administrador, viagem_id, primeira)
+    _associar(client, headers_administrador, outra_viagem, de_outra)
 
-    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_administrador)
 
     assert resposta.status_code == 200
     assert [e["id"] for e in resposta.json()] == [segunda.id, primeira.id]
@@ -632,30 +632,30 @@ def test_lista_apenas_as_encomendas_associadas_a_viagem(
     assert resposta.json()[0]["status"] == "pendente"
 
 
-def test_viagem_sem_encomendas_retorna_lista_vazia(client, headers_empresa):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+def test_viagem_sem_encomendas_retorna_lista_vazia(client, headers_administrador):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
 
-    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_administrador)
 
     assert resposta.status_code == 200
     assert resposta.json() == []
 
 
 def test_viagem_cancelada_continua_listando_suas_encomendas(
-    client, headers_empresa, criar_encomenda_no_banco
+    client, headers_administrador, criar_encomenda_no_banco
 ):
-    viagem_id = _criar_viagem_api(client, headers_empresa)
+    viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco()
-    _associar(client, headers_empresa, viagem_id, encomenda)
-    _patch_status(client, headers_empresa, viagem_id, "cancelada")
+    _associar(client, headers_administrador, viagem_id, encomenda)
+    _patch_status(client, headers_administrador, viagem_id, "cancelada")
 
-    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_empresa)
+    resposta = client.get(f"/viagens/{viagem_id}/encomendas", headers=headers_administrador)
 
     assert [(e["id"], e["status"]) for e in resposta.json()] == [(encomenda.id, "imprevisto")]
 
 
-def test_listar_encomendas_de_viagem_inexistente_retorna_404(client, headers_empresa):
-    resposta = client.get("/viagens/999/encomendas", headers=headers_empresa)
+def test_listar_encomendas_de_viagem_inexistente_retorna_404(client, headers_administrador):
+    resposta = client.get("/viagens/999/encomendas", headers=headers_administrador)
 
     assert resposta.status_code == 404
     assert resposta.json()["detail"] == "Viagem nao encontrada."

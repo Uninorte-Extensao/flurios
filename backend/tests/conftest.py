@@ -62,6 +62,38 @@ def headers_empresa(db_session):
     return _headers(criar_token_acesso({"sub": str(usuario.id)}))
 
 
+def _headers_empresa_com_perfil(db_session, perfil, nome, email):
+    from app.core.security import criar_token_acesso
+    from app.schemas.usuario import UsuarioCreate
+    from app.services.empresa import completar_cadastro_empresa
+    from app.services.usuario import criar_usuario
+
+    usuario = criar_usuario(
+        db_session, UsuarioCreate(nome=nome, email=email, senha="123456")
+    )
+    completar_cadastro_empresa(db_session, usuario, perfil)
+
+    return _headers(criar_token_acesso({"sub": str(usuario.id)}))
+
+
+@pytest.fixture()
+def headers_administrador(db_session):
+    from app.models.empresa import PerfilEmpresa
+
+    return _headers_empresa_com_perfil(
+        db_session, PerfilEmpresa.ADMINISTRADOR, "Admin", "admin@teste.com"
+    )
+
+
+@pytest.fixture()
+def headers_atendente(db_session):
+    from app.models.empresa import PerfilEmpresa
+
+    return _headers_empresa_com_perfil(
+        db_session, PerfilEmpresa.ATENDENTE, "Atendente", "atendente@teste.com"
+    )
+
+
 @pytest.fixture()
 def headers_cliente(db_session):
     from app.core.security import criar_token_acesso

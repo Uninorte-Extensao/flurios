@@ -59,22 +59,22 @@ def _historico(db_session, encomenda_id):
 
 
 @pytest.fixture()
-def viagem_em_andamento(client, headers_empresa):
-    rota_id, paradas = _criar_rota_com_paradas(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
-    _status_viagem(client, headers_empresa, viagem_id, "em_andamento")
+def viagem_em_andamento(client, headers_administrador):
+    rota_id, paradas = _criar_rota_com_paradas(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
+    _status_viagem(client, headers_administrador, viagem_id, "em_andamento")
 
     return viagem_id, rota_id, paradas
 
 
 def test_registrar_localizacao_move_embarcada_para_em_transito_com_parada_e_viagem(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, _, paradas = viagem_em_andamento
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, encomenda)
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.status_code == 201
     assert resposta.json() == {
@@ -90,15 +90,15 @@ def test_registrar_localizacao_move_embarcada_para_em_transito_com_parada_e_viag
 
 
 def test_encomenda_em_transito_ganha_movimentacao_de_localizacao_em_cada_parada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, _, paradas = viagem_em_andamento
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, encomenda)
 
-    _registrar(client, headers_empresa, viagem_id, paradas[0])
-    _registrar(client, headers_empresa, viagem_id, paradas[1])
-    _registrar(client, headers_empresa, viagem_id, paradas[2])
+    _registrar(client, headers_administrador, viagem_id, paradas[0])
+    _registrar(client, headers_administrador, viagem_id, paradas[1])
+    _registrar(client, headers_administrador, viagem_id, paradas[2])
 
     historico = _historico(db_session, encomenda.id)
     assert [(m.status.value, m.parada_id) for m in historico] == [
@@ -113,7 +113,7 @@ def test_encomenda_em_transito_ganha_movimentacao_de_localizacao_em_cada_parada(
 
 
 def test_so_encomendas_a_bordo_sao_afetadas(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, _, paradas = viagem_em_andamento
     ficam_como_estao = [
@@ -128,9 +128,9 @@ def test_so_encomendas_a_bordo_sao_afetadas(
     nao_afetadas = [criar_encomenda_no_banco(s) for s in ficam_como_estao]
     a_bordo = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
     for encomenda in [*nao_afetadas, a_bordo]:
-        _associar(client, headers_empresa, viagem_id, encomenda)
+        _associar(client, headers_administrador, viagem_id, encomenda)
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.json()["encomendas_registradas"] == 1
     db_session.expire_all()
@@ -140,15 +140,15 @@ def test_so_encomendas_a_bordo_sao_afetadas(
 
 
 def test_encomenda_de_outra_viagem_nao_e_afetada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, rota_id, paradas = viagem_em_andamento
-    outra_viagem = _criar_viagem(client, headers_empresa, rota_id)
-    _status_viagem(client, headers_empresa, outra_viagem, "em_andamento")
+    outra_viagem = _criar_viagem(client, headers_administrador, rota_id)
+    _status_viagem(client, headers_administrador, outra_viagem, "em_andamento")
     da_outra = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, outra_viagem, da_outra)
+    _associar(client, headers_administrador, outra_viagem, da_outra)
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.status_code == 201
     assert resposta.json()["encomendas_registradas"] == 0
@@ -157,10 +157,10 @@ def test_encomenda_de_outra_viagem_nao_e_afetada(
     assert len(_historico(db_session, da_outra.id)) == 1
 
 
-def test_viagem_sem_encomendas_a_bordo_retorna_zero(client, headers_empresa, viagem_em_andamento):
+def test_viagem_sem_encomendas_a_bordo_retorna_zero(client, headers_administrador, viagem_em_andamento):
     viagem_id, _, paradas = viagem_em_andamento
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.status_code == 201
     assert resposta.json()["encomendas_registradas"] == 0
@@ -168,18 +168,18 @@ def test_viagem_sem_encomendas_a_bordo_retorna_zero(client, headers_empresa, via
 
 @pytest.mark.parametrize("caminho", [[], ["em_andamento", "concluida"], ["cancelada"]])
 def test_viagem_fora_de_andamento_retorna_409_sem_registrar_nada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, caminho
+    client, db_session, headers_administrador, criar_encomenda_no_banco, caminho
 ):
-    rota_id, paradas = _criar_rota_com_paradas(client, headers_empresa)
-    viagem_id = _criar_viagem(client, headers_empresa, rota_id)
+    rota_id, paradas = _criar_rota_com_paradas(client, headers_administrador)
+    viagem_id = _criar_viagem(client, headers_administrador, rota_id)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, encomenda)
     for passo in caminho:
-        _status_viagem(client, headers_empresa, viagem_id, passo)
+        _status_viagem(client, headers_administrador, viagem_id, passo)
     movimentacoes_antes = db_session.query(Movimentacao).count()
     status_antes = db_session.get(Encomenda, encomenda.id).status
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.status_code == 409
     assert resposta.json()["detail"] == "So e possivel registrar localizacao em viagem em andamento."
@@ -189,16 +189,16 @@ def test_viagem_fora_de_andamento_retorna_409_sem_registrar_nada(
 
 
 def test_parada_de_outra_rota_retorna_409_sem_registrar_nada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, _, _ = viagem_em_andamento
     _, paradas_outra_rota = _criar_rota_com_paradas(
-        client, headers_empresa, nome="Manaus - Parintins", paradas=("Manaus", "Parintins")
+        client, headers_administrador, nome="Manaus - Parintins", paradas=("Manaus", "Parintins")
     )
     encomenda = criar_encomenda_no_banco(StatusEncomenda.EMBARCADA)
-    _associar(client, headers_empresa, viagem_id, encomenda)
+    _associar(client, headers_administrador, viagem_id, encomenda)
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas_outra_rota[1])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas_outra_rota[1])
 
     assert resposta.status_code == 409
     assert resposta.json()["detail"] == "A parada nao pertence a rota da viagem."
@@ -207,20 +207,20 @@ def test_parada_de_outra_rota_retorna_409_sem_registrar_nada(
     assert len(_historico(db_session, encomenda.id)) == 1
 
 
-def test_viagem_ou_parada_inexistente_retorna_404(client, headers_empresa, viagem_em_andamento):
+def test_viagem_ou_parada_inexistente_retorna_404(client, headers_administrador, viagem_em_andamento):
     viagem_id, _, paradas = viagem_em_andamento
 
-    sem_viagem = _registrar(client, headers_empresa, 999, paradas[0])
-    sem_parada = _registrar(client, headers_empresa, viagem_id, 999)
+    sem_viagem = _registrar(client, headers_administrador, 999, paradas[0])
+    sem_parada = _registrar(client, headers_administrador, viagem_id, 999)
 
     assert (sem_viagem.status_code, sem_viagem.json()["detail"]) == (404, "Viagem nao encontrada.")
     assert (sem_parada.status_code, sem_parada.json()["detail"]) == (404, "Parada nao encontrada.")
 
 
-def test_parada_id_ausente_retorna_422(client, headers_empresa, viagem_em_andamento):
+def test_parada_id_ausente_retorna_422(client, headers_administrador, viagem_em_andamento):
     viagem_id, _, _ = viagem_em_andamento
 
-    resposta = client.post(f"/viagens/{viagem_id}/localizacao", json={}, headers=headers_empresa)
+    resposta = client.post(f"/viagens/{viagem_id}/localizacao", json={}, headers=headers_administrador)
 
     assert resposta.status_code == 422
 
@@ -233,7 +233,7 @@ def test_registro_de_localizacao_exige_empresa_logada(client, headers_cliente):
 
 
 def test_localizacao_de_varias_encomendas_e_gravada_em_um_unico_commit(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, viagem_em_andamento
+    client, db_session, headers_administrador, criar_encomenda_no_banco, viagem_em_andamento
 ):
     viagem_id, _, paradas = viagem_em_andamento
     for status_encomenda in [
@@ -241,11 +241,11 @@ def test_localizacao_de_varias_encomendas_e_gravada_em_um_unico_commit(
         StatusEncomenda.EMBARCADA,
         StatusEncomenda.EM_TRANSITO,
     ]:
-        _associar(client, headers_empresa, viagem_id, criar_encomenda_no_banco(status_encomenda))
+        _associar(client, headers_administrador, viagem_id, criar_encomenda_no_banco(status_encomenda))
     commits = []
     event.listen(db_session, "after_commit", lambda sessao: commits.append(1))
 
-    resposta = _registrar(client, headers_empresa, viagem_id, paradas[0])
+    resposta = _registrar(client, headers_administrador, viagem_id, paradas[0])
 
     assert resposta.json()["encomendas_registradas"] == 3
     assert len(commits) == 1

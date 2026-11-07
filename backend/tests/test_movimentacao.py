@@ -143,13 +143,13 @@ def test_cadastro_de_encomenda_registra_movimentacao_pendente(
 
 
 def test_patch_de_status_registra_movimentacao(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     encomenda = criar_encomenda_no_banco()
 
     for novo in ["recebida", "aguardando_embarque"]:
         resposta = client.patch(
-            f"/encomendas/{encomenda.id}/status", json={"status": novo}, headers=headers_empresa
+            f"/encomendas/{encomenda.id}/status", json={"status": novo}, headers=headers_administrador
         )
         assert resposta.status_code == 200
 
@@ -161,12 +161,12 @@ def test_patch_de_status_registra_movimentacao(
 
 
 def test_patch_com_o_mesmo_status_nao_registra_movimentacao(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     encomenda = criar_encomenda_no_banco()
 
     resposta = client.patch(
-        f"/encomendas/{encomenda.id}/status", json={"status": "pendente"}, headers=headers_empresa
+        f"/encomendas/{encomenda.id}/status", json={"status": "pendente"}, headers=headers_administrador
     )
 
     assert resposta.status_code == 200
@@ -174,12 +174,12 @@ def test_patch_com_o_mesmo_status_nao_registra_movimentacao(
 
 
 def test_patch_de_status_invalido_nao_registra_movimentacao(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     encomenda = criar_encomenda_no_banco()
 
     resposta = client.patch(
-        f"/encomendas/{encomenda.id}/status", json={"status": "voando"}, headers=headers_empresa
+        f"/encomendas/{encomenda.id}/status", json={"status": "voando"}, headers=headers_administrador
     )
 
     assert resposta.status_code == 422
@@ -187,17 +187,17 @@ def test_patch_de_status_invalido_nao_registra_movimentacao(
 
 
 def test_cancelar_viagem_registra_movimentacao_imprevisto_com_viagem(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     viagem_id, (a, b) = _criar_viagem_com_encomendas(
         client,
-        headers_empresa,
+        headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.EMBARCADA, StatusEncomenda.EM_TRANSITO],
     )
 
     resposta = client.patch(
-        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_empresa
+        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_administrador
     )
 
     assert resposta.status_code == 200
@@ -208,17 +208,17 @@ def test_cancelar_viagem_registra_movimentacao_imprevisto_com_viagem(
 
 
 def test_cancelar_viagem_nao_registra_movimentacao_para_entregue_nem_imprevisto(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     viagem_id, (entregue, ja_imprevisto) = _criar_viagem_com_encomendas(
         client,
-        headers_empresa,
+        headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.ENTREGUE, StatusEncomenda.IMPREVISTO],
     )
 
     client.patch(
-        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_empresa
+        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_administrador
     )
 
     assert len(_historico(db_session, entregue.id)) == 1
@@ -226,11 +226,11 @@ def test_cancelar_viagem_nao_registra_movimentacao_para_entregue_nem_imprevisto(
 
 
 def test_cancelamento_grava_viagem_encomendas_e_movimentacoes_em_um_unico_commit(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     viagem_id, encomendas = _criar_viagem_com_encomendas(
         client,
-        headers_empresa,
+        headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.RECEBIDA] * 3,
     )
@@ -238,18 +238,18 @@ def test_cancelamento_grava_viagem_encomendas_e_movimentacoes_em_um_unico_commit
     event.listen(db_session, "after_commit", lambda sessao: commits.append(1))
 
     client.patch(
-        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_empresa
+        f"/viagens/{viagem_id}/status", json={"status": "cancelada"}, headers=headers_administrador
     )
 
     assert len(commits) == 1
 
 
 def test_falha_ao_registrar_movimentacao_desfaz_o_cancelamento(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, monkeypatch
+    client, db_session, headers_administrador, criar_encomenda_no_banco, monkeypatch
 ):
     viagem_id, encomendas = _criar_viagem_com_encomendas(
         client,
-        headers_empresa,
+        headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.RECEBIDA] * 2,
     )

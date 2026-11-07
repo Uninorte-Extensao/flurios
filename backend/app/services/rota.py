@@ -4,6 +4,7 @@ from app.models.parada import Parada
 from app.models.rota import Rota
 from app.models.viagem import Viagem
 from app.schemas.rota import RotaCreate, RotaUpdate
+from app.services.parada import MENSAGEM_PARADA_COM_ENCOMENDAS, parada_e_destino_de_encomenda
 
 MENSAGEM_ROTA_COM_VIAGENS = "Nao e possivel excluir uma rota que ja possui viagens."
 
@@ -41,6 +42,11 @@ def excluir_rota(db: Session, rota: Rota) -> None:
 
     if possui_viagens is not None:
         raise ValueError(MENSAGEM_ROTA_COM_VIAGENS)
+
+    # Apagar a rota apagaria suas paradas: vale a mesma regra de remover uma parada.
+    paradas_ids = [p.id for p in db.query(Parada.id).filter(Parada.rota_id == rota.id)]
+    if parada_e_destino_de_encomenda(db, paradas_ids):
+        raise ValueError(MENSAGEM_PARADA_COM_ENCOMENDAS)
 
     db.query(Parada).filter(Parada.rota_id == rota.id).delete()
     db.delete(rota)
