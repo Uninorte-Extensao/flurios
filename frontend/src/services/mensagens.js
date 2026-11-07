@@ -21,6 +21,10 @@ const TRADUCOES = {
   'A parada de origem nao pode ser o destino da encomenda.':
     'A origem (Manaus) não pode ser o destino da encomenda.',
   'Encomenda nao encontrada.': 'Encomenda não encontrada.',
+  'Viagem nao encontrada.': 'Viagem não encontrada.',
+  'So e possivel registrar localizacao em viagem em andamento.':
+    'Só é possível registrar a localização de uma viagem em andamento.',
+  'A parada nao pertence a rota da viagem.': 'Esta parada não pertence à rota da viagem.',
   'Informe nome e cpf da pessoa autorizada.': 'Informe o nome e o CPF da pessoa autorizada.',
   'Encomenda ja entregue: nao e possivel cadastrar pessoa autorizada.':
     'Esta encomenda já foi entregue: não é possível cadastrar pessoa autorizada.',
@@ -28,7 +32,23 @@ const TRADUCOES = {
     'Esta encomenda já está a retirar: não é possível trocar a pessoa autorizada.',
 }
 
+const STATUS_VIAGEM = {
+  programada: 'programada',
+  em_andamento: 'em andamento',
+  concluida: 'concluída',
+  cancelada: 'cancelada',
+}
+
+// "Transicao de status invalida: programada -> concluida." (a mensagem leva os dois status)
+const TRANSICAO_VIAGEM = /^Transicao de status invalida: (\w+) -> (\w+)\.$/
+
 export function traduzirMensagem(texto, padrao) {
   const limpo = String(texto).replace(/^Value error, /, '')
+
+  const transicao = TRANSICAO_VIAGEM.exec(limpo)
+  if (transicao && transicao[1] in STATUS_VIAGEM && transicao[2] in STATUS_VIAGEM) {
+    return `Não é possível mudar a viagem de ${STATUS_VIAGEM[transicao[1]]} para ${STATUS_VIAGEM[transicao[2]]}.`
+  }
+
   return TRADUCOES[limpo] ?? padrao ?? limpo
 }

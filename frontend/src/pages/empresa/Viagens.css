@@ -1,0 +1,144 @@
+/* Telas de viagens da empresa: lista (filtro) e detalhe. Tabela/cards usam as classes de Gestao.css. */
+.viagens__filtro {
+  max-width: 260px;
+}
+
+.viagem__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  margin-bottom: var(--espaco-3);
+}
+
+/* Dados e encomendas à esquerda; ações e localização à direita (mesma proporção da rota) */
+.viagem__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.viagem__principal,
+.viagem__lateral {
+  display: grid;
+  gap: var(--espaco-5);
+  min-width: 0;
+}
+
+.viagem__dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--espaco-4);
+  margin: 0;
+}
+
+.viagem__dados dt {
+  color: var(--cinza);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.viagem__dados dd {
+  margin: var(--espaco-1) 0 0;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.viagem__paradas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3) var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.viagem__paradas li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.viagem__ordem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.viagem__acoes {
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.viagem__acoes .campo__ajuda {
+  margin: 0 0 var(--espaco-2);
+}
+
+/* Ocupação da embarcação (barra azul; coral quando passa da capacidade) */
+.viagem__ocupacao {
+  display: grid;
+  gap: var(--espaco-1);
+  min-width: 160px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.viagem__barra {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--cinza-claro);
+  overflow: hidden;
+}
+
+.viagem__barra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--azul);
+}
+
+.viagem__barra .viagem__barra-cheia {
+  background: var(--coral);
+}
+
+.viagem__cards {
+  margin-top: var(--espaco-3);
+}
+
+.viagem__cards .gestao__cartao {
+  box-shadow: none;
+  border: 1px solid var(--borda);
+}
+
+@media (max-width: 900px) {
+  .viagem__corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* No celular, as ações vêm antes dos dados */
+  .viagem__lateral {
+    order: -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .viagem__tabela {
+    display: none;
+  }
+
+  .viagem__cards {
+    display: grid;
+  }
+
+  .viagens__filtro {
+    max-width: none;
+  }
+}
