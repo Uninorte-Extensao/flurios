@@ -13,6 +13,8 @@ const TRADUCOES = {
   'Embarcacao nao encontrada.': 'Embarcação não encontrada.',
   'Rota nao encontrada.': 'Rota não encontrada.',
   'Parada nao encontrada.': 'Parada não encontrada.',
+  'Nao e possivel remover uma parada que e destino de encomendas.':
+    'Não é possível remover uma parada que é destino de encomendas.',
   'Ja existe uma parada com essa ordem na rota.': 'Já existe uma parada com essa ordem nesta rota.',
   'Destinatario nao encontrado.': 'Destinatário não encontrado.',
   'Parada de destino nao encontrada.': 'O destino escolhido não existe mais. Atualize a página.',
