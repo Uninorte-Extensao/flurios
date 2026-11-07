@@ -1,3 +1,4 @@
+import { somenteDigitos } from '../utils/cpf.js'
 import { montarConsultaEncomendas } from '../utils/gestaoEncomenda.js'
 import { api } from './api'
 
@@ -67,6 +68,17 @@ export function definirPessoaAutorizada(encomendaId, { destinatarioEAPessoa, nom
 // parada_destino_id, destino_nome, criado_em, viagem_ativa: { id, status, data_saida } | null }.
 export function listarEncomendasDaEmpresa(filtros = {}) {
   return api.get(`/empresa/encomendas${montarConsultaEncomendas(filtros)}`)
+}
+
+// Registra a retirada (encomenda a_retirar -> entregue) com o CPF de quem retira e o aceite do termo.
+// O CPF vai só com dígitos, apenas no corpo do POST. Devolve { id, encomenda_id, cpf_retirante (mascarado),
+// termo_aceito, status_encomenda, criado_em }. Erros: 403 CPF diferente do da pessoa autorizada,
+// 409 status/pessoa autorizada, 422 termo ou CPF inválido (nenhuma mensagem traz CPF).
+export function registrarRetirada(encomendaId, { cpf, termoAceito }) {
+  return api.post(`/encomendas/${encomendaId}/retirada`, {
+    cpf_retirante: somenteDigitos(cpf),
+    termo_aceito: termoAceito,
+  })
 }
 
 // Muda o status e gera uma movimentação. O backend aceita qualquer status válido (sem checar a sequência).

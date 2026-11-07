@@ -47,6 +47,13 @@ const TRADUCOES = {
     'Esta encomenda já foi entregue: não é possível cadastrar pessoa autorizada.',
   'A encomenda ja esta a retirar: nao e possivel trocar a pessoa autorizada.':
     'Esta encomenda já está a retirar: não é possível trocar a pessoa autorizada.',
+  'E obrigatorio aceitar o termo de compromisso.': 'É obrigatório aceitar o termo de compromisso.',
+  'Retirada so e permitida para encomenda a retirar.':
+    'A retirada só é permitida para encomenda com status “A retirar”. Atualize a página.',
+  'A encomenda nao tem pessoa autorizada cadastrada.':
+    'Esta encomenda não tem pessoa autorizada cadastrada. O cliente precisa cadastrá-la.',
+  'O CPF informado nao confere com o da pessoa autorizada.':
+    'O CPF informado não confere com o da pessoa autorizada. Confira o documento de quem está retirando.',
 }
 
 const STATUS_VIAGEM = {
