@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { normalizarCodigo } from '../utils/encomenda'
 import { MENUS, ROTULOS_PERFIL_EMPRESA } from '../routes/menus'
 import BottomNav from './BottomNav'
 import Header from './Header'
@@ -22,12 +23,18 @@ export default function AppLayout({ area }) {
     navegar('/login', { replace: true })
   }
 
+  // Só o cliente tem busca funcional por enquanto: o código digitado abre o detalhe da encomenda.
+  function aoBuscar(texto) {
+    navegar(`/cliente/encomendas/${encodeURIComponent(normalizarCodigo(texto))}`)
+  }
+
   return (
     <div className="app">
       <Header
         nomeUsuario={usuario?.nome}
         rotuloUsuario={rotuloUsuario}
         placeholderBusca={menu.placeholderBusca}
+        aoBuscar={area === 'cliente' ? aoBuscar : undefined}
       />
       <div className="app__corpo">
         <Sidebar itens={menu.itens} suporte={menu.suporte} aoSair={aoSair} />

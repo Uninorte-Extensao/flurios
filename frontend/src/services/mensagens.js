@@ -14,6 +14,12 @@ const TRADUCOES = {
   'Parada de destino nao encontrada.': 'O destino escolhido não existe mais. Atualize a página.',
   'A parada de origem nao pode ser o destino da encomenda.':
     'A origem (Manaus) não pode ser o destino da encomenda.',
+  'Encomenda nao encontrada.': 'Encomenda não encontrada.',
+  'Informe nome e cpf da pessoa autorizada.': 'Informe o nome e o CPF da pessoa autorizada.',
+  'Encomenda ja entregue: nao e possivel cadastrar pessoa autorizada.':
+    'Esta encomenda já foi entregue: não é possível cadastrar pessoa autorizada.',
+  'A encomenda ja esta a retirar: nao e possivel trocar a pessoa autorizada.':
+    'Esta encomenda já está a retirar: não é possível trocar a pessoa autorizada.',
 }
 
 export function traduzirMensagem(texto, padrao) {

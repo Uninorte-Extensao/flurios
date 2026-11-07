@@ -54,3 +54,35 @@ export function agruparDestinosPorRota(destinos) {
 
   return grupos
 }
+
+// Linha do tempo: a API devolve da mais antiga para a mais recente; a tela mostra o contrário.
+export function ordenarHistorico(historico) {
+  return [...historico].reverse()
+}
+
+// Código digitado na busca do header: sem espaços e em maiúsculas (os códigos são FLX + letras/números).
+export function normalizarCodigo(texto) {
+  return String(texto ?? '').trim().toUpperCase()
+}
+
+// Mesma regra do backend (T7.3): entregue não aceita nada; a retirar só aceita o primeiro cadastro
+// (sem ele a retirada seria impossível), não a troca.
+export function podeDefinirPessoaAutorizada(status, temPessoa) {
+  if (status === 'entregue') return false
+  if (status === 'a_retirar') return !temPessoa
+  return true
+}
+
+// Valida o formulário da pessoa autorizada. Devolve { campo: 'mensagem' } (vazio = válido).
+export function validarPessoaAutorizada({ usarDestinatario, nome, cpf }) {
+  const erros = {}
+
+  if (usarDestinatario) return erros
+
+  if (!nome.trim()) erros.nome = 'Informe o nome da pessoa autorizada.'
+
+  if (!cpf.trim()) erros.cpf = 'Informe o CPF da pessoa autorizada.'
+  else if (!cpfValido(cpf)) erros.cpf = 'CPF inválido.'
+
+  return erros
+}

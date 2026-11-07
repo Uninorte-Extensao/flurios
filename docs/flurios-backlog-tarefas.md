@@ -163,7 +163,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | F.1 | Tela de login | P0 | 🟢 | 1.6 |
 | F.2 | Tela de cadastro de cliente | P0 | 🟢 | 2.3 |
 | F.3 | ✅ Tela de cadastro de encomenda (lado cliente): origem fixa Manaus, destino e destinatário (existente ou novo), código de rastreio com botão de copiar; menu do cliente com Início, Nova encomenda e Minhas encomendas (rota provisória até a F.4) — concluída | P0 | 🟡 | 3.4, 3.9, 4.7, 2.7 |
-| F.4 | Tela "meus códigos" + rastreamento com linha do tempo | P0 | 🟡 | 6.4 |
+| F.4 | ✅ Tela "meus códigos" + rastreamento com linha do tempo (cliente): lista de encomendas (tabela no desktop, cards no mobile), detalhe com linha do tempo da mais recente para a mais antiga, tela "Encomenda não encontrada", busca do header ligada ao detalhe e pessoa autorizada (CPF mascarado) com cadastro/troca — concluída | P0 | 🟡 | 6.4, 7.3 |
 | F.5 | Telas administrativas: embarcação, rota, viagem | P0 | 🟡 | 4.2, 4.6, 5.2 |
 | F.6 | Tela de gestão de encomendas (empresa) | P0 | 🟡 | 3.6 |
 | F.7 | Tela de retirada (funcionário) com termo de compromisso | P0 | 🟡 | 7.4 |

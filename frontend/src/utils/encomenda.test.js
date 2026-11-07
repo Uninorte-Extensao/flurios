@@ -3,8 +3,12 @@ import { test } from 'node:test'
 import {
   agruparDestinosPorRota,
   DESCRICAO_MAXIMA,
+  normalizarCodigo,
   NOVO_DESTINATARIO,
+  ordenarHistorico,
+  podeDefinirPessoaAutorizada,
   validarEncomenda,
+  validarPessoaAutorizada,
 } from './encomenda.js'
 
 const VALIDO = {
@@ -87,4 +91,36 @@ test('agrupa destinos por rota mantendo a ordem', () => {
     { rota: 'Manaus - Coari', destinos: [destinos[0], destinos[1]] },
     { rota: 'Manaus - Parintins', destinos: [destinos[2]] },
   ])
+})
+
+test('histórico é exibido da movimentação mais recente para a mais antiga', () => {
+  const historico = [{ id: 1 }, { id: 2 }, { id: 3 }]
+
+  assert.deepEqual(ordenarHistorico(historico).map((m) => m.id), [3, 2, 1])
+  assert.deepEqual(historico.map((m) => m.id), [1, 2, 3])
+})
+
+test('código da busca é aparado e posto em maiúsculas', () => {
+  assert.equal(normalizarCodigo('  flx4k9ab3c1z '), 'FLX4K9AB3C1Z')
+  assert.equal(normalizarCodigo('   '), '')
+})
+
+test('pessoa autorizada: cadastro e troca conforme o status', () => {
+  assert.equal(podeDefinirPessoaAutorizada('pendente', true), true)
+  assert.equal(podeDefinirPessoaAutorizada('em_transito', false), true)
+  assert.equal(podeDefinirPessoaAutorizada('a_retirar', false), true)
+  assert.equal(podeDefinirPessoaAutorizada('a_retirar', true), false)
+  assert.equal(podeDefinirPessoaAutorizada('entregue', false), false)
+})
+
+test('pessoa autorizada: nome e CPF válidos são exigidos, exceto se for o destinatário', () => {
+  assert.deepEqual(validarPessoaAutorizada({ usarDestinatario: true, nome: '', cpf: '' }), {})
+  assert.deepEqual(
+    validarPessoaAutorizada({ usarDestinatario: false, nome: 'Maria Silva', cpf: '111.222.333-96' }),
+    {},
+  )
+
+  const erros = validarPessoaAutorizada({ usarDestinatario: false, nome: ' ', cpf: '111.111.111-11' })
+  assert.equal(erros.nome, 'Informe o nome da pessoa autorizada.')
+  assert.equal(erros.cpf, 'CPF inválido.')
 })
