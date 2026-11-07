@@ -11,9 +11,11 @@ import MinhasEncomendas from '../pages/cliente/MinhasEncomendas'
 import NovaEncomenda from '../pages/cliente/NovaEncomenda'
 import EmBreve from '../pages/EmBreve'
 import DetalheRota from '../pages/empresa/DetalheRota'
+import DetalheViagem from '../pages/empresa/DetalheViagem'
 import Embarcacoes from '../pages/empresa/Embarcacoes'
 import PainelOperacional from '../pages/empresa/PainelOperacional'
 import Rotas from '../pages/empresa/Rotas'
+import Viagens from '../pages/empresa/Viagens'
 import Login from '../pages/Login'
 import { caminhoInicial } from './caminhos'
 import RotaProtegida from './RotaProtegida'
@@ -63,7 +65,8 @@ export default function AppRoutes() {
           <Route path="embarcacoes" element={<Embarcacoes />} />
           <Route path="rotas" element={<Rotas />} />
           <Route path="rotas/:rotaId" element={<DetalheRota />} />
-          <Route path="viagens" element={<EmBreve titulo="Viagens" />} />
+          <Route path="viagens" element={<Viagens />} />
+          <Route path="viagens/:viagemId" element={<DetalheViagem />} />
           <Route path="encomendas" element={<EmBreve titulo="Encomendas" />} />
           <Route path="dashboard" element={<EmBreve titulo="Dashboard" />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
