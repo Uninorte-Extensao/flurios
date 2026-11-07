@@ -1,3 +1,4 @@
+import { montarConsultaEncomendas } from '../utils/gestaoEncomenda.js'
 import { api } from './api'
 
 // Paradas que podem ser destino (todas, menos a origem): [{ id, nome, rota_nome }]
@@ -57,4 +58,18 @@ export function definirPessoaAutorizada(encomendaId, { destinatarioEAPessoa, nom
   const corpo = destinatarioEAPessoa ? { destinatario_e_a_pessoa: true } : { nome, cpf }
 
   return api.post(`/encomendas/${encomendaId}/pessoa-autorizada`, corpo)
+}
+
+// ---- Empresa (GET /empresa/encomendas; o GET /encomendas acima é só do cliente) ----
+
+// Filtros opcionais (ver `montarConsultaEncomendas`). Devolve { itens, total, limite, deslocamento };
+// cada item: { id, codigo_rastreio, status, descricao, destinatario: { nome, cpf (mascarado) },
+// parada_destino_id, destino_nome, criado_em, viagem_ativa: { id, status, data_saida } | null }.
+export function listarEncomendasDaEmpresa(filtros = {}) {
+  return api.get(`/empresa/encomendas${montarConsultaEncomendas(filtros)}`)
+}
+
+// Muda o status e gera uma movimentação. O backend aceita qualquer status válido (sem checar a sequência).
+export function atualizarStatusEncomenda(id, status) {
+  return api.patch(`/encomendas/${id}/status`, { status })
 }

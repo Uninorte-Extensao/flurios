@@ -1,0 +1,166 @@
+/* Gestão de encomendas da empresa: filtros, lista e detalhe. Tabela/cards usam as classes de Gestao.css. */
+.encomendas__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0 var(--espaco-4);
+  align-items: end;
+  margin-bottom: var(--espaco-4);
+}
+
+.encomendas__caixa {
+  min-height: 42px;
+}
+
+.encomendas__codigo {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+}
+
+.encomendas__destinatario {
+  display: grid;
+}
+
+.encomendas__viagem {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.encomendas__paginacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-top: var(--espaco-4);
+}
+
+.encomendas__paginas {
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+/* Detalhe */
+.encomenda__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  margin-bottom: var(--espaco-3);
+}
+
+.encomenda__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.encomenda__principal,
+.encomenda__lateral {
+  display: grid;
+  gap: var(--espaco-5);
+  min-width: 0;
+}
+
+.encomenda__dados {
+  display: grid;
+  gap: var(--espaco-3);
+  margin: 0;
+}
+
+.encomenda__dados > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: var(--espaco-3);
+  align-items: center;
+}
+
+.encomenda__dados dt {
+  color: var(--cinza);
+  font-size: 13px;
+}
+
+.encomenda__dados dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.encomenda__nota {
+  margin: var(--espaco-2) 0 0;
+}
+
+/* Texto acima de um botão ou campo, dentro de card ou janela */
+.encomenda__texto {
+  margin: 0 0 var(--espaco-4);
+}
+
+/* Janelas de associação */
+.associar__lista {
+  display: grid;
+  gap: var(--espaco-2);
+  margin: 0 0 var(--espaco-3);
+  padding: 0;
+  list-style: none;
+}
+
+.associar__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.associar__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.associar__info strong {
+  word-break: break-all;
+}
+
+.associar__item .btn {
+  min-height: 36px;
+}
+
+@media (max-width: 900px) {
+  .encomenda__corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* No celular, as ações vêm antes dos dados */
+  .encomenda__lateral {
+    order: -1;
+  }
+
+  .encomenda__dados > div {
+    grid-template-columns: 1fr;
+    gap: var(--espaco-1);
+  }
+}
+
+@media (max-width: 700px) {
+  .encomendas__paginacao {
+    justify-content: center;
+  }
+
+  .encomendas__paginas {
+    width: 100%;
+  }
+
+  .encomendas__paginas .btn {
+    flex: 1;
+  }
+
+  .associar__item .btn {
+    width: 100%;
+  }
+}

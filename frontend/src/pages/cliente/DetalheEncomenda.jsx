@@ -4,11 +4,11 @@ import { Link, useParams } from 'react-router-dom'
 import Alerta from '../../components/Alerta'
 import Card from '../../components/Card'
 import Carregando from '../../components/Carregando'
+import LinhaDoTempo from '../../components/LinhaDoTempo'
 import StatusBadge from '../../components/StatusBadge'
 import { buscarEncomenda, buscarRastreio, listarDestinatarios } from '../../services/encomendas'
 import { mascararCpf } from '../../utils/cpf'
 import { formatarData, formatarDataHora } from '../../utils/data'
-import { ordenarHistorico } from '../../utils/encomenda'
 import PessoaAutorizadaCard from './PessoaAutorizadaCard'
 import './DetalheEncomenda.css'
 
@@ -29,39 +29,6 @@ function NaoEncontrada({ codigo }) {
         </Link>
       </div>
     </Card>
-  )
-}
-
-function LinhaDoTempo({ historico }) {
-  const movimentacoes = ordenarHistorico(historico)
-
-  if (movimentacoes.length === 0) {
-    return <p className="texto-suave">Ainda não há movimentações registradas.</p>
-  }
-
-  return (
-    <ol className="linha-do-tempo">
-      {movimentacoes.map((m, indice) => (
-        <li
-          key={m.id}
-          className={`linha-do-tempo__item${indice === 0 ? ' linha-do-tempo__item--atual' : ''}`}
-        >
-          <span className="linha-do-tempo__ponto" aria-hidden="true" />
-          <div className="linha-do-tempo__conteudo">
-            <StatusBadge status={m.status} />
-            {m.parada_nome && (
-              <span className="linha-do-tempo__local">
-                <MapPin size={14} aria-hidden="true" />
-                {m.parada_nome}
-              </span>
-            )}
-            <time className="texto-suave" dateTime={m.criado_em}>
-              {formatarDataHora(m.criado_em)}
-            </time>
-          </div>
-        </li>
-      ))}
-    </ol>
   )
 }
 

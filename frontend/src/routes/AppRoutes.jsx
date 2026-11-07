@@ -10,9 +10,11 @@ import DetalheEncomenda from '../pages/cliente/DetalheEncomenda'
 import MinhasEncomendas from '../pages/cliente/MinhasEncomendas'
 import NovaEncomenda from '../pages/cliente/NovaEncomenda'
 import EmBreve from '../pages/EmBreve'
+import DetalheEncomendaEmpresa from '../pages/empresa/DetalheEncomendaEmpresa'
 import DetalheRota from '../pages/empresa/DetalheRota'
 import DetalheViagem from '../pages/empresa/DetalheViagem'
 import Embarcacoes from '../pages/empresa/Embarcacoes'
+import Encomendas from '../pages/empresa/Encomendas'
 import PainelOperacional from '../pages/empresa/PainelOperacional'
 import Rotas from '../pages/empresa/Rotas'
 import Viagens from '../pages/empresa/Viagens'
@@ -67,7 +69,8 @@ export default function AppRoutes() {
           <Route path="rotas/:rotaId" element={<DetalheRota />} />
           <Route path="viagens" element={<Viagens />} />
           <Route path="viagens/:viagemId" element={<DetalheViagem />} />
-          <Route path="encomendas" element={<EmBreve titulo="Encomendas" />} />
+          <Route path="encomendas" element={<Encomendas />} />
+          <Route path="encomendas/:codigo" element={<DetalheEncomendaEmpresa />} />
           <Route path="dashboard" element={<EmBreve titulo="Dashboard" />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>
