@@ -197,3 +197,34 @@ def criar_encomenda_no_banco(db_session, rota_com_paradas):
         return encomenda
 
     return _criar
+
+
+@pytest.fixture()
+def associar_a_viagem(client, db_session):
+    """Associa pela API uma encomenda de qualquer status a uma viagem.
+
+    A API so aceita encomendas recebidas ou aguardando embarque. Para montar
+    cenarios com encomendas em outros status (embarcada, entregue...), a
+    encomenda e associada como recebida e o status real e restaurado direto no
+    banco, sem gerar movimentacao.
+    """
+    from app.models.encomenda import StatusEncomenda
+
+    def _associar(headers, viagem_id, encomenda):
+        status_real = encomenda.status
+        encomenda.status = StatusEncomenda.RECEBIDA
+        db_session.commit()
+
+        resposta = client.post(
+            f"/viagens/{viagem_id}/encomendas",
+            json={"encomenda_id": encomenda.id},
+            headers=headers,
+        )
+        assert resposta.status_code == 201, resposta.text
+
+        encomenda.status = status_real
+        db_session.commit()
+
+        return resposta
+
+    return _associar

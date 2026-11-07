@@ -87,24 +87,25 @@ def _historico(db_session, encomenda_id):
     )
 
 
-def _criar_viagem_com_encomendas(client, headers, criar_encomenda_no_banco, status_das_encomendas):
+def _criar_viagem_com_encomendas(
+    client, headers, criar_encomenda_no_banco, status_das_encomendas, associar_a_viagem, rota_com_paradas
+):
     embarcacao_id = client.post(
         "/embarcacoes", json={"nome": "Rio Negro I", "capacidade": 120}, headers=headers
     ).json()["id"]
-    rota_id = client.post("/rotas", json={"nome": "Manaus - Tefe"}, headers=headers).json()["id"]
     viagem_id = client.post(
         "/viagens",
-        json={"embarcacao_id": embarcacao_id, "rota_id": rota_id, "data_saida": "2026-12-01T08:00:00"},
+        json={
+            "embarcacao_id": embarcacao_id,
+            "rota_id": rota_com_paradas.rota.id,
+            "data_saida": "2026-12-01T08:00:00",
+        },
         headers=headers,
     ).json()["id"]
     encomendas = []
     for status_encomenda in status_das_encomendas:
         encomenda = criar_encomenda_no_banco(status_encomenda)
-        client.post(
-            f"/viagens/{viagem_id}/encomendas",
-            json={"encomenda_id": encomenda.id},
-            headers=headers,
-        )
+        associar_a_viagem(headers, viagem_id, encomenda)
         encomendas.append(encomenda)
 
     return viagem_id, encomendas
@@ -187,13 +188,16 @@ def test_patch_de_status_invalido_nao_registra_movimentacao(
 
 
 def test_cancelar_viagem_registra_movimentacao_imprevisto_com_viagem(
-    client, db_session, headers_administrador, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco,
+    associar_a_viagem, rota_com_paradas
 ):
     viagem_id, (a, b) = _criar_viagem_com_encomendas(
         client,
         headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.EMBARCADA, StatusEncomenda.EM_TRANSITO],
+        associar_a_viagem,
+        rota_com_paradas,
     )
 
     resposta = client.patch(
@@ -208,13 +212,16 @@ def test_cancelar_viagem_registra_movimentacao_imprevisto_com_viagem(
 
 
 def test_cancelar_viagem_nao_registra_movimentacao_para_entregue_nem_imprevisto(
-    client, db_session, headers_administrador, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco,
+    associar_a_viagem, rota_com_paradas
 ):
     viagem_id, (entregue, ja_imprevisto) = _criar_viagem_com_encomendas(
         client,
         headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.ENTREGUE, StatusEncomenda.IMPREVISTO],
+        associar_a_viagem,
+        rota_com_paradas,
     )
 
     client.patch(
@@ -226,13 +233,16 @@ def test_cancelar_viagem_nao_registra_movimentacao_para_entregue_nem_imprevisto(
 
 
 def test_cancelamento_grava_viagem_encomendas_e_movimentacoes_em_um_unico_commit(
-    client, db_session, headers_administrador, criar_encomenda_no_banco
+    client, db_session, headers_administrador, criar_encomenda_no_banco,
+    associar_a_viagem, rota_com_paradas
 ):
     viagem_id, encomendas = _criar_viagem_com_encomendas(
         client,
         headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.RECEBIDA] * 3,
+        associar_a_viagem,
+        rota_com_paradas,
     )
     commits = []
     event.listen(db_session, "after_commit", lambda sessao: commits.append(1))
@@ -245,13 +255,16 @@ def test_cancelamento_grava_viagem_encomendas_e_movimentacoes_em_um_unico_commit
 
 
 def test_falha_ao_registrar_movimentacao_desfaz_o_cancelamento(
-    client, db_session, headers_administrador, criar_encomenda_no_banco, monkeypatch
+    client, db_session, headers_administrador, criar_encomenda_no_banco, monkeypatch,
+    associar_a_viagem, rota_com_paradas
 ):
     viagem_id, encomendas = _criar_viagem_com_encomendas(
         client,
         headers_administrador,
         criar_encomenda_no_banco,
         [StatusEncomenda.RECEBIDA] * 2,
+        associar_a_viagem,
+        rota_com_paradas,
     )
     chamadas = []
 
