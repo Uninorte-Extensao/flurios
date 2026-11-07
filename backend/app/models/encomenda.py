@@ -66,6 +66,7 @@ class Encomenda(Base):
     )
 
     parada_destino = relationship("Parada")
+    destinatario = relationship("Destinatario")
 
     @property
     def destino_nome(self) -> str | None:

@@ -95,6 +95,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 4.5 | Validar que `ordem` não se repete na mesma rota | P1 | 🟡 | 4.4 |
 | 4.6 | CRUD de rota + paradas (endpoints) | P0 | 🟡 | 4.4 |
 | 4.7 | ✅ Endpoint `GET /rotas/destinos` (paradas de todas as rotas, exceto a de ordem 1; qualquer usuário logado) | P0 | 🟢 | 4.6 |
+| 4.8 | ✅ Endpoint `GET /empresa/encomendas` (só empresa; não colide com `GET /encomendas`, do cliente): filtros opcionais `status` (repetível), `parada_destino_id`, `rota_id` (destino pertence à rota), `sem_viagem_ativa` e `busca` por código (parcial); paginação `limite` (1–100, padrão 20) e `deslocamento`; resposta `{itens, total, limite, deslocamento}`, cada item com código, status, descrição, destinatário (nome e CPF mascarado), destino, data e `viagem_ativa` — concluída | P0 | 🟢 | 3.6, 5.3 |
 
 *Três pessoas podem dividir: uma em Embarcação (4.1–4.2), outra em Rota (4.3), outra em Parada (4.4–4.6).*
 

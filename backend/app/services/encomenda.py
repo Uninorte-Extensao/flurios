@@ -1,10 +1,19 @@
+from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
 from app.core.rastreio import gerar_codigo_rastreio
 from app.models.cliente import Cliente
 from app.models.destinatario import Destinatario
 from app.models.encomenda import Encomenda, StatusEncomenda
-from app.schemas.encomenda import EncomendaCreate
+from app.models.parada import Parada
+from app.models.viagem import STATUS_VIAGEM_ATIVOS, Viagem
+from app.models.viagem_encomenda import ViagemEncomenda
+from app.schemas.encomenda import (
+    DestinatarioResumoOut,
+    EncomendaCreate,
+    EncomendaEmpresaOut,
+    ViagemAtivaResumoOut,
+)
 from app.services.movimentacao import registrar_movimentacao
 
 MAX_TENTATIVAS_CODIGO = 10
@@ -114,3 +123,104 @@ def criar_encomenda(
     db.refresh(nova_encomenda)
 
     return nova_encomenda
+
+
+def _encomenda_tem_viagem_ativa():
+    return exists().where(
+        ViagemEncomenda.encomenda_id == Encomenda.id,
+        ViagemEncomenda.viagem_id == Viagem.id,
+        Viagem.status.in_(STATUS_VIAGEM_ATIVOS),
+    )
+
+
+def listar_encomendas_da_empresa(
+    db: Session,
+    status: list[StatusEncomenda] | None = None,
+    parada_destino_id: int | None = None,
+    rota_id: int | None = None,
+    sem_viagem_ativa: bool = False,
+    busca: str | None = None,
+    limite: int = 20,
+    deslocamento: int = 0,
+) -> tuple[list[EncomendaEmpresaOut], int]:
+    """Lista encomendas de todos os clientes, com filtros opcionais combinados (E).
+
+    Retorna a pagina pedida e o total antes da paginacao. O CPF do destinatario
+    sai mascarado pelo schema de saida.
+    """
+    consulta = db.query(Encomenda)
+
+    if status:
+        consulta = consulta.filter(Encomenda.status.in_(status))
+
+    if parada_destino_id is not None:
+        consulta = consulta.filter(Encomenda.parada_destino_id == parada_destino_id)
+
+    if rota_id is not None:
+        consulta = consulta.filter(
+            Encomenda.parada_destino_id.in_(
+                db.query(Parada.id).filter(Parada.rota_id == rota_id)
+            )
+        )
+
+    if sem_viagem_ativa:
+        consulta = consulta.filter(~_encomenda_tem_viagem_ativa())
+
+    if busca:
+        consulta = consulta.filter(
+            Encomenda.codigo_rastreio.icontains(busca.strip(), autoescape=True)
+        )
+
+    total = consulta.count()
+    encomendas = (
+        consulta.order_by(Encomenda.criado_em.desc(), Encomenda.id.desc())
+        .limit(limite)
+        .offset(deslocamento)
+        .all()
+    )
+
+    viagens_ativas = _viagens_ativas_por_encomenda(db, [e.id for e in encomendas])
+
+    itens = [
+        EncomendaEmpresaOut(
+            id=e.id,
+            codigo_rastreio=e.codigo_rastreio,
+            status=e.status,
+            descricao=e.descricao,
+            destinatario=DestinatarioResumoOut(
+                nome=e.destinatario.nome, cpf=e.destinatario.cpf
+            ),
+            parada_destino_id=e.parada_destino_id,
+            destino_nome=e.destino_nome,
+            criado_em=e.criado_em,
+            viagem_ativa=viagens_ativas.get(e.id),
+        )
+        for e in encomendas
+    ]
+
+    return itens, total
+
+
+def _viagens_ativas_por_encomenda(
+    db: Session,
+    encomenda_ids: list[int],
+) -> dict[int, ViagemAtivaResumoOut]:
+    if not encomenda_ids:
+        return {}
+
+    linhas = (
+        db.query(ViagemEncomenda.encomenda_id, Viagem)
+        .join(Viagem, Viagem.id == ViagemEncomenda.viagem_id)
+        .filter(
+            ViagemEncomenda.encomenda_id.in_(encomenda_ids),
+            Viagem.status.in_(STATUS_VIAGEM_ATIVOS),
+        )
+        .all()
+    )
+
+    return {
+        encomenda_id: ViagemAtivaResumoOut(
+            id=viagem.id, status=viagem.status, data_saida=viagem.data_saida
+        )
+        for encomenda_id, viagem in linhas
+    }
