@@ -6,6 +6,8 @@ import LayoutPublico from '../components/LayoutPublico'
 import { useAuth } from '../hooks/useAuth'
 import CadastroCliente from '../pages/CadastroCliente'
 import AreaCliente from '../pages/cliente/AreaCliente'
+import DetalheEncomenda from '../pages/cliente/DetalheEncomenda'
+import MinhasEncomendas from '../pages/cliente/MinhasEncomendas'
 import NovaEncomenda from '../pages/cliente/NovaEncomenda'
 import EmBreve from '../pages/EmBreve'
 import PainelOperacional from '../pages/empresa/PainelOperacional'
@@ -68,9 +70,8 @@ export default function AppRoutes() {
         <Route path="/cliente" element={<AppLayout area="cliente" />}>
           <Route index element={<AreaCliente />} />
           <Route path="nova-encomenda" element={<NovaEncomenda />} />
-          {/* Provisórias até a F.4 (lista de códigos e linha do tempo). */}
-          <Route path="encomendas" element={<EmBreve titulo="Minhas encomendas" />} />
-          <Route path="encomendas/:codigo" element={<EmBreve titulo="Acompanhar encomenda" />} />
+          <Route path="encomendas" element={<MinhasEncomendas />} />
+          <Route path="encomendas/:codigo" element={<DetalheEncomenda />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>
       </Route>

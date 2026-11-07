@@ -1,0 +1,87 @@
+.minhas-encomendas__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.minhas-encomendas__codigo {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+}
+
+.minhas-encomendas__destinatario {
+  display: grid;
+}
+
+.minhas-encomendas__vazio {
+  display: grid;
+  justify-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5) var(--espaco-3);
+  color: var(--azul);
+  text-align: center;
+}
+
+.minhas-encomendas__vazio p {
+  max-width: 420px;
+}
+
+.minhas-encomendas__vazio h2 {
+  color: var(--texto);
+}
+
+/* Tabela no desktop, cards no mobile */
+.minhas-encomendas__tabela {
+  padding: 0;
+  overflow: hidden;
+}
+
+.minhas-encomendas__cards {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: var(--espaco-3);
+}
+
+.minhas-encomendas__cartao {
+  display: grid;
+  gap: var(--espaco-2);
+  padding: var(--espaco-4);
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.minhas-encomendas__cartao-topo,
+.minhas-encomendas__cartao-rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.minhas-encomendas__cartao-topo .minhas-encomendas__codigo {
+  color: var(--azul);
+}
+
+@media (max-width: 700px) {
+  .minhas-encomendas__tabela {
+    display: none;
+  }
+
+  .minhas-encomendas__cards {
+    display: grid;
+  }
+
+  .minhas-encomendas__topo .btn {
+    width: 100%;
+  }
+}

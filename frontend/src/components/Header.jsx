@@ -1,4 +1,5 @@
 import { Bell, Search } from 'lucide-react'
+import { useState } from 'react'
 import Logo from './Logo'
 import './Header.css'
 
@@ -12,14 +13,33 @@ function iniciais(nome) {
 }
 
 // Header azul com logo, busca ao centro, sino e usuário logado à direita.
-export default function Header({ nomeUsuario, rotuloUsuario, placeholderBusca = 'Buscar...' }) {
+// `aoBuscar(texto)` é chamado ao enviar a busca (Enter) com texto preenchido; sem ele, a busca não faz nada.
+export default function Header({ nomeUsuario, rotuloUsuario, placeholderBusca = 'Buscar...', aoBuscar }) {
+  const [busca, setBusca] = useState('')
+
+  function enviarBusca(evento) {
+    evento.preventDefault()
+
+    const texto = busca.trim()
+    if (!aoBuscar || !texto) return
+
+    aoBuscar(texto)
+    setBusca('')
+  }
+
   return (
     <header className="header">
       <Logo />
 
-      <form className="header__busca" role="search" onSubmit={(e) => e.preventDefault()}>
+      <form className="header__busca" role="search" onSubmit={enviarBusca}>
         <Search size={16} aria-hidden="true" />
-        <input type="search" placeholder={placeholderBusca} aria-label={placeholderBusca} />
+        <input
+          type="search"
+          placeholder={placeholderBusca}
+          aria-label={placeholderBusca}
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
       </form>
 
       <div className="header__direita">
