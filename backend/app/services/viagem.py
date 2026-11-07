@@ -1,10 +1,14 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.models.embarcacao import Embarcacao
 from app.models.encomenda import Encomenda, StatusEncomenda
 from app.models.parada import Parada
+from app.models.rota import Rota
 from app.models.viagem import STATUS_VIAGEM_ATIVOS, StatusViagem, Viagem
 from app.models.viagem_encomenda import ViagemEncomenda
 from app.schemas.viagem import ViagemCreate
+from app.services.dashboard import STATUS_ENCOMENDA_FORA_DA_OCUPACAO
 from app.services.encomenda import atualizar_status_encomenda
 from app.services.movimentacao import registrar_movimentacao
 
@@ -27,6 +31,37 @@ MENSAGEM_VIAGEM_NAO_ATIVA = (
 MENSAGEM_ENCOMENDA_JA_ASSOCIADA = (
     "Encomenda ja esta associada a uma viagem ativa."
 )
+MENSAGEM_STATUS_ENCOMENDA_INVALIDO = (
+    "So e possivel associar encomendas com status recebida ou aguardando_embarque."
+)
+MENSAGEM_ENCOMENDA_SEM_DESTINO = "A encomenda nao tem destino definido."
+MENSAGEM_DESTINO_FORA_DA_ROTA = "O destino da encomenda nao pertence a rota da viagem."
+MENSAGEM_EMBARCACAO_SEM_CAPACIDADE = (
+    "A embarcacao da viagem nao tem capacidade para mais encomendas."
+)
+MENSAGEM_EMBARCACAO_INATIVA = "Nao e possivel programar viagem com embarcacao inativa."
+MENSAGEM_ROTA_SEM_PARADAS = "Nao e possivel programar viagem com rota sem paradas."
+MENSAGEM_REMOCAO_SO_PROGRAMADA = (
+    "So e possivel remover encomendas de viagens programadas."
+)
+MENSAGEM_ENCOMENDA_NAO_ESTA_NA_VIAGEM = "A encomenda nao esta associada a esta viagem."
+
+# Unicos status em que a encomenda esta pronta para ser colocada em uma viagem.
+STATUS_ENCOMENDA_ASSOCIAVEIS = (
+    StatusEncomenda.RECEBIDA,
+    StatusEncomenda.AGUARDANDO_EMBARQUE,
+)
+
+
+def validar_programacao(db: Session, embarcacao: Embarcacao, rota: Rota) -> None:
+    """Recusa viagem com embarcacao inativa ou rota sem paradas."""
+    if not embarcacao.ativa:
+        raise ValueError(MENSAGEM_EMBARCACAO_INATIVA)
+
+    tem_paradas = db.query(Parada.id).filter(Parada.rota_id == rota.id).first()
+
+    if tem_paradas is None:
+        raise ValueError(MENSAGEM_ROTA_SEM_PARADAS)
 
 
 def criar_viagem(db: Session, dados: ViagemCreate) -> Viagem:
@@ -46,6 +81,22 @@ def criar_viagem(db: Session, dados: ViagemCreate) -> Viagem:
 
 def buscar_viagem_por_id(db: Session, viagem_id: int) -> Viagem | None:
     return db.query(Viagem).filter(Viagem.id == viagem_id).first()
+
+
+def contar_encomendas_ativas_da_viagem(db: Session, viagem_id: int) -> int:
+    """Encomendas associadas que ainda ocupam espaco (nem entregues, nem em imprevisto).
+
+    Mesma convencao da ocupacao do dashboard.
+    """
+    return (
+        db.query(func.count(Encomenda.id))
+        .join(ViagemEncomenda, ViagemEncomenda.encomenda_id == Encomenda.id)
+        .filter(
+            ViagemEncomenda.viagem_id == viagem_id,
+            Encomenda.status.notin_(STATUS_ENCOMENDA_FORA_DA_OCUPACAO),
+        )
+        .scalar()
+    )
 
 
 def associar_encomenda(
@@ -69,6 +120,29 @@ def associar_encomenda(
     if ja_em_viagem_ativa is not None:
         raise ValueError(MENSAGEM_ENCOMENDA_JA_ASSOCIADA)
 
+    if encomenda.status not in STATUS_ENCOMENDA_ASSOCIAVEIS:
+        raise ValueError(MENSAGEM_STATUS_ENCOMENDA_INVALIDO)
+
+    if encomenda.parada_destino_id is None:
+        raise ValueError(MENSAGEM_ENCOMENDA_SEM_DESTINO)
+
+    destino_na_rota = (
+        db.query(Parada.id)
+        .filter(
+            Parada.id == encomenda.parada_destino_id,
+            Parada.rota_id == viagem.rota_id,
+        )
+        .first()
+    )
+
+    if destino_na_rota is None:
+        raise ValueError(MENSAGEM_DESTINO_FORA_DA_ROTA)
+
+    embarcacao = db.get(Embarcacao, viagem.embarcacao_id)
+
+    if contar_encomendas_ativas_da_viagem(db, viagem.id) >= embarcacao.capacidade:
+        raise ValueError(MENSAGEM_EMBARCACAO_SEM_CAPACIDADE)
+
     vinculo = ViagemEncomenda(viagem_id=viagem.id, encomenda_id=encomenda.id)
 
     db.add(vinculo)
@@ -76,6 +150,40 @@ def associar_encomenda(
     db.refresh(vinculo)
 
     return vinculo
+
+
+def remover_encomenda(db: Session, viagem: Viagem, encomenda: Encomenda) -> None:
+    """Tira a encomenda de uma viagem programada e a devolve ao status recebida.
+
+    Status e movimentacao (com a viagem de origem) saem no mesmo commit do
+    desfazimento do vinculo. Se a encomenda ja estava recebida, o status nao
+    muda e nenhuma movimentacao repetida e gravada. ValueError: viagem fora de
+    programada. LookupError: a encomenda nao esta nessa viagem.
+    """
+    if viagem.status != StatusViagem.PROGRAMADA:
+        raise ValueError(MENSAGEM_REMOCAO_SO_PROGRAMADA)
+
+    vinculo = (
+        db.query(ViagemEncomenda)
+        .filter(
+            ViagemEncomenda.viagem_id == viagem.id,
+            ViagemEncomenda.encomenda_id == encomenda.id,
+        )
+        .first()
+    )
+
+    if vinculo is None:
+        raise LookupError(MENSAGEM_ENCOMENDA_NAO_ESTA_NA_VIAGEM)
+
+    db.delete(vinculo)
+    atualizar_status_encomenda(
+        db,
+        encomenda,
+        StatusEncomenda.RECEBIDA,
+        commit=False,
+        viagem_id=viagem.id,
+    )
+    db.commit()
 
 
 def atualizar_status_viagem(

@@ -31,6 +31,8 @@ from app.services.viagem import (
     listar_encomendas_da_viagem,
     listar_viagens,
     registrar_localizacao,
+    remover_encomenda,
+    validar_programacao,
 )
 
 router = APIRouter(prefix="/viagens", tags=["viagens"])
@@ -42,17 +44,26 @@ def cadastrar_viagem(
     empresa: Empresa = Depends(empresa_logado),
     db: Session = Depends(get_db),
 ):
-    if buscar_embarcacao_por_id(db, dados.embarcacao_id) is None:
+    embarcacao = buscar_embarcacao_por_id(db, dados.embarcacao_id)
+
+    if embarcacao is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Embarcacao nao encontrada.",
         )
 
-    if buscar_rota_por_id(db, dados.rota_id) is None:
+    rota = buscar_rota_por_id(db, dados.rota_id)
+
+    if rota is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Rota nao encontrada.",
         )
+
+    try:
+        validar_programacao(db, embarcacao, rota)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
     return criar_viagem(db, dados)
 
@@ -86,6 +97,40 @@ def associar_encomenda_a_viagem(
 
     try:
         return associar_encomenda(db, viagem, encomenda)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
+
+
+@router.delete(
+    "/{viagem_id}/encomendas/{encomenda_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remover_encomenda_da_viagem(
+    viagem_id: int,
+    encomenda_id: int,
+    empresa: Empresa = Depends(empresa_logado),
+    db: Session = Depends(get_db),
+):
+    viagem = buscar_viagem_por_id(db, viagem_id)
+
+    if viagem is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Viagem nao encontrada.",
+        )
+
+    encomenda = buscar_encomenda_por_id(db, encomenda_id)
+
+    if encomenda is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encomenda nao encontrada.",
+        )
+
+    try:
+        remover_encomenda(db, viagem, encomenda)
+    except LookupError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro))
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
 
