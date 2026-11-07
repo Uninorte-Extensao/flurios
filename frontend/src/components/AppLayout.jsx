@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { normalizarCodigo } from '../utils/encomenda'
+import { itensDoMenuParaUsuario } from '../utils/perfil'
 import { MENUS, ROTULOS_PERFIL_EMPRESA } from '../routes/menus'
 import BottomNav from './BottomNav'
 import Header from './Header'
@@ -37,12 +38,12 @@ export default function AppLayout({ area }) {
         aoBuscar={area === 'cliente' ? aoBuscar : undefined}
       />
       <div className="app__corpo">
-        <Sidebar itens={menu.itens} suporte={menu.suporte} aoSair={aoSair} />
+        <Sidebar itens={itensDoMenuParaUsuario(menu.itens, usuario)} suporte={menu.suporte} aoSair={aoSair} />
         <main className="app__conteudo">
           <Outlet />
         </main>
       </div>
-      <BottomNav itens={menu.barraInferior} />
+      <BottomNav itens={itensDoMenuParaUsuario(menu.barraInferior, usuario)} />
     </div>
   )
 }

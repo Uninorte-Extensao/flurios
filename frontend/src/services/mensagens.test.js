@@ -66,3 +66,20 @@ test('traduz as mensagens de programação de viagem', () => {
     'Não é possível programar viagem com uma rota sem paradas.',
   )
 })
+
+test('traduz as mensagens da retirada sem expor CPF', () => {
+  const mensagens = [
+    'E obrigatorio aceitar o termo de compromisso.',
+    'Retirada so e permitida para encomenda a retirar.',
+    'A encomenda nao tem pessoa autorizada cadastrada.',
+    'O CPF informado nao confere com o da pessoa autorizada.',
+  ]
+
+  for (const original of mensagens) {
+    const traduzida = traduzirMensagem(original)
+    assert.notEqual(traduzida, original)
+    assert.doesNotMatch(traduzida, /\d{3}/)
+  }
+
+  assert.match(traduzirMensagem('O CPF informado nao confere com o da pessoa autorizada.'), /não confere/)
+})

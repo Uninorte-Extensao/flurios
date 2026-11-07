@@ -16,10 +16,14 @@ import DetalheViagem from '../pages/empresa/DetalheViagem'
 import Embarcacoes from '../pages/empresa/Embarcacoes'
 import Encomendas from '../pages/empresa/Encomendas'
 import PainelOperacional from '../pages/empresa/PainelOperacional'
+import RetiradaEncomenda from '../pages/empresa/RetiradaEncomenda'
+import Retiradas from '../pages/empresa/Retiradas'
 import Rotas from '../pages/empresa/Rotas'
 import Viagens from '../pages/empresa/Viagens'
 import Login from '../pages/Login'
+import { PERFIS_RETIRADA } from '../utils/retirada'
 import { caminhoInicial } from './caminhos'
+import RotaPorPerfil from './RotaPorPerfil'
 import RotaProtegida from './RotaProtegida'
 import RotaPublica from './RotaPublica'
 
@@ -71,6 +75,10 @@ export default function AppRoutes() {
           <Route path="viagens/:viagemId" element={<DetalheViagem />} />
           <Route path="encomendas" element={<Encomendas />} />
           <Route path="encomendas/:codigo" element={<DetalheEncomendaEmpresa />} />
+          <Route element={<RotaPorPerfil perfis={PERFIS_RETIRADA} />}>
+            <Route path="retiradas" element={<Retiradas />} />
+            <Route path="retiradas/:codigo" element={<RetiradaEncomenda />} />
+          </Route>
           <Route path="dashboard" element={<EmBreve titulo="Dashboard" />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>

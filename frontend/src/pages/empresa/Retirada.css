@@ -1,0 +1,75 @@
+/* Retirada da encomenda (empresa): fila e tela de confirmação. Reaproveita Gestao.css e Encomendas.css. */
+.retirada__busca {
+  margin-bottom: var(--espaco-4);
+}
+
+.retirada__busca .campo {
+  margin-bottom: 0;
+}
+
+.retirada__resumo {
+  margin: var(--espaco-4) 0 0;
+}
+
+.retirada__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.retirada__dados,
+.retirada__acao {
+  display: grid;
+  gap: var(--espaco-5);
+  min-width: 0;
+}
+
+.retirada__pessoa {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  color: var(--azul);
+}
+
+.retirada__pessoa > div {
+  display: grid;
+  color: var(--texto);
+}
+
+.retirada__termo {
+  max-height: 320px;
+  margin-bottom: var(--espaco-4);
+  padding: var(--espaco-4);
+  overflow-y: auto;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--cartao);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.retirada__termo h3 {
+  margin: 0 0 var(--espaco-2);
+  font-size: 14px;
+  color: var(--azul-escuro);
+}
+
+.retirada__termo p {
+  margin: 0 0 var(--espaco-2);
+}
+
+.retirada__termo p:last-child {
+  margin-bottom: 0;
+}
+
+.retirada__erro-termo {
+  display: block;
+  margin: calc(var(--espaco-1) * -1) 0 var(--espaco-3);
+}
+
+@media (max-width: 900px) {
+  .retirada__corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
