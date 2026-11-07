@@ -10,6 +10,10 @@ const TRADUCOES = {
   'Usuario nao possui cadastro de empresa.': 'Esta conta não é de empresa.',
   'Nao foi possivel validar as credenciais.': 'Sua sessão expirou. Entre novamente.',
   'Acao restrita a administradores.': 'Ação restrita a administradores.',
+  'Embarcacao nao encontrada.': 'Embarcação não encontrada.',
+  'Rota nao encontrada.': 'Rota não encontrada.',
+  'Parada nao encontrada.': 'Parada não encontrada.',
+  'Ja existe uma parada com essa ordem na rota.': 'Já existe uma parada com essa ordem nesta rota.',
   'Destinatario nao encontrado.': 'Destinatário não encontrado.',
   'Parada de destino nao encontrada.': 'O destino escolhido não existe mais. Atualize a página.',
   'A parada de origem nao pode ser o destino da encomenda.':

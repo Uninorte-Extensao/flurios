@@ -122,6 +122,15 @@ textarea {
   color: var(--azul);
 }
 
+.btn--perigo {
+  background: var(--coral);
+  color: var(--branco);
+}
+
+.btn--perigo:hover:not(:disabled) {
+  background: #c95b59;
+}
+
 .btn--bloco {
   width: 100%;
 }

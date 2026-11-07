@@ -1,0 +1,111 @@
+/* Telas de gestão da empresa (embarcações, rotas): topo, tabela no desktop e cards no mobile. */
+.gestao__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.gestao__nome {
+  font-weight: 700;
+}
+
+.gestao__vazio {
+  display: grid;
+  justify-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5) var(--espaco-3);
+  color: var(--azul);
+  text-align: center;
+}
+
+.gestao__vazio h2 {
+  color: var(--texto);
+}
+
+.gestao__vazio p {
+  max-width: 420px;
+}
+
+.gestao__tabela {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gestao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.gestao__acoes .btn {
+  min-height: 32px;
+  padding: 0 var(--espaco-3);
+  font-size: 13px;
+}
+
+.gestao__cards {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: var(--espaco-3);
+}
+
+.gestao__cartao {
+  display: grid;
+  gap: var(--espaco-2);
+  padding: var(--espaco-4);
+  border-radius: var(--raio);
+  background: var(--branco);
+  box-shadow: var(--sombra);
+}
+
+.gestao__cartao-topo,
+.gestao__cartao-rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.gestao__cartao-topo .gestao__nome {
+  color: var(--texto);
+  word-break: break-word;
+}
+
+.gestao__cartao .btn {
+  min-height: 36px;
+}
+
+/* Caixa de seleção dentro de formulários */
+.campo--caixa {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.campo--caixa input {
+  width: 18px;
+  height: 18px;
+}
+
+.campo--caixa label {
+  font-weight: 400;
+}
+
+@media (max-width: 700px) {
+  .gestao__tabela {
+    display: none;
+  }
+
+  .gestao__cards {
+    display: grid;
+  }
+
+  .gestao__topo .btn {
+    width: 100%;
+  }
+}

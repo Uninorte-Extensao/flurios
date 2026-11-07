@@ -17,6 +17,9 @@ const STATUS = {
   em_andamento: { rotulo: 'Em andamento', variante: 'verde-claro' },
   concluida: { rotulo: 'Concluída', variante: 'verde' },
   cancelada: { rotulo: 'Cancelada', variante: 'vermelho' },
+  // Embarcação
+  ativa: { rotulo: 'Ativa', variante: 'verde-claro' },
+  inativa: { rotulo: 'Inativa', variante: 'cinza' },
 }
 
 export default function StatusBadge({ status }) {
