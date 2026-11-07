@@ -3,7 +3,7 @@ import './Modal.css'
 
 // Janela de diálogo (elemento <dialog> nativo: foco preso, Esc fecha, fundo bloqueado).
 // Renderize só quando estiver aberta. `bloqueado` impede fechar (ex.: enquanto salva).
-export default function Modal({ titulo, aoFechar, bloqueado = false, children }) {
+export default function Modal({ titulo, aoFechar, bloqueado = false, className = '', children }) {
   const ref = useRef(null)
   const idTitulo = useId()
 
@@ -23,7 +23,7 @@ export default function Modal({ titulo, aoFechar, bloqueado = false, children })
   }
 
   return (
-    <dialog ref={ref} className="modal" aria-labelledby={idTitulo} onCancel={aoCancelar}>
+    <dialog ref={ref} className={`modal ${className}`.trim()} aria-labelledby={idTitulo} onCancel={aoCancelar}>
       <div className="modal__conteudo">
         <h2 id={idTitulo} className="modal__titulo">
           {titulo}

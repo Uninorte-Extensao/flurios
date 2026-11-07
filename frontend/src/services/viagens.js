@@ -37,3 +37,14 @@ export function listarEncomendasDaViagem(id) {
 export function registrarLocalizacao(id, paradaId) {
   return api.post(`/viagens/${id}/localizacao`, { parada_id: paradaId })
 }
+
+// Só viagem programada ou em andamento; encomenda recebida ou aguardando embarque, com destino na rota
+// da viagem, ainda sem viagem ativa e com capacidade livre (409 com a mensagem do motivo nos outros casos).
+export function associarEncomenda(viagemId, encomendaId) {
+  return api.post(`/viagens/${viagemId}/encomendas`, { encomenda_id: encomendaId })
+}
+
+// Só com a viagem programada (409 nos outros casos). A encomenda volta ao status `recebida`.
+export function desassociarEncomenda(viagemId, encomendaId) {
+  return api.delete(`/viagens/${viagemId}/encomendas/${encomendaId}`)
+}

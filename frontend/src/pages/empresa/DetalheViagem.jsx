@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Package, Play, CircleCheck, Ban } from 'lucide-react'
+import { ArrowLeft, MapPin, Package, Play, CircleCheck, Ban, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Alerta from '../../components/Alerta'
@@ -17,6 +17,7 @@ import {
   registrarLocalizacao,
 } from '../../services/viagens'
 import { formatarDataHora } from '../../utils/data'
+import { caminhoDetalheEmpresa } from '../../utils/gestaoEncomenda'
 import {
   encomendasAfetadasPeloCancelamento,
   encomendasEmbarcadas,
@@ -25,6 +26,8 @@ import {
   podeRegistrarLocalizacao,
   viagemFinalizada,
 } from '../../utils/viagem'
+import AssociarEncomendaModal from './AssociarEncomendaModal'
+import DesassociarEncomendaModal from './DesassociarEncomendaModal'
 import './Gestao.css'
 import './Viagens.css'
 
@@ -198,6 +201,8 @@ export default function DetalheViagem() {
   const [erroAcao, setErroAcao] = useState('')
   const [emCurso, setEmCurso] = useState('')
   const [cancelando, setCancelando] = useState(false)
+  const [associando, setAssociando] = useState(false)
+  const [removendo, setRemovendo] = useState(null)
 
   const voltar = (
     <Link to="/empresa/viagens" className="viagem__voltar">
@@ -215,6 +220,13 @@ export default function DetalheViagem() {
       .then((lista) => definirEncomendas(() => lista))
       .catch(() => {})
   }, [viagemId, definirViagem, definirEncomendas])
+
+  // Só a lista de encomendas (depois de associar ou remover), sem voltar ao "Carregando...".
+  const atualizarEncomendas = useCallback(() => {
+    listarEncomendasDaViagem(viagemId)
+      .then((lista) => definirEncomendas(() => lista))
+      .catch(() => {})
+  }, [viagemId, definirEncomendas])
 
   if (viagemCarga.carregando) return <Carregando />
 
@@ -284,15 +296,50 @@ export default function DetalheViagem() {
     atualizarEmSilencio()
   }
 
+  function aoEncomendaRemovida() {
+    const codigo = removendo.codigo_rastreio
+    setRemovendo(null)
+    setErroAcao('')
+    setAviso(`Encomenda ${codigo} removida da viagem e devolvida para Recebida.`)
+    atualizarEncomendas()
+  }
+
+  function aoConflitoDeEncomendas() {
+    setAviso('')
+    atualizarEmSilencio()
+  }
+
+  // Associar vale com a viagem ativa; remover, só com ela programada (regra do backend, 409 nos outros casos).
+  const podeAssociar = !viagemFinalizada(viagem.status)
+  const podeRemover = viagem.status === 'programada'
+
   const colunasEncomendas = [
     {
       chave: 'codigo_rastreio',
       titulo: 'Código de rastreio',
-      render: (e) => <span className="gestao__nome">{e.codigo_rastreio}</span>,
+      render: (e) => (
+        <Link to={caminhoDetalheEmpresa(e.codigo_rastreio)} className="gestao__nome">
+          {e.codigo_rastreio}
+        </Link>
+      ),
     },
     { chave: 'destino_nome', titulo: 'Destino', render: (e) => e.destino_nome ?? '—' },
     { chave: 'descricao', titulo: 'Descrição' },
     { chave: 'status', titulo: 'Status', render: (e) => <StatusBadge status={e.status} /> },
+    ...(podeRemover
+      ? [
+          {
+            chave: 'acoes',
+            titulo: 'Ações',
+            render: (e) => (
+              <button type="button" className="btn btn--contorno" onClick={() => setRemovendo(e)}>
+                <Trash2 size={14} aria-hidden="true" />
+                Remover
+              </button>
+            ),
+          },
+        ]
+      : []),
   ]
 
   const ocupada = Boolean(emCurso)
@@ -366,7 +413,24 @@ export default function DetalheViagem() {
 
           <Card
             titulo="Encomendas da viagem"
-            acoes={encomendasProntas && <Ocupacao total={encomendas.length} capacidade={embarcacao.capacidade} />}
+            acoes={
+              <div className="viagem__acoes-encomendas">
+                {encomendasProntas && <Ocupacao total={encomendas.length} capacidade={embarcacao.capacidade} />}
+                {podeAssociar && (
+                  <button
+                    type="button"
+                    className="btn btn--primario"
+                    onClick={() => {
+                      setAviso('')
+                      setAssociando(true)
+                    }}
+                  >
+                    <Plus size={16} aria-hidden="true" />
+                    Associar encomenda
+                  </button>
+                )}
+              </div>
+            }
           >
             {encomendasCarga.carregando && <Carregando />}
             {encomendasCarga.erro && (
@@ -378,8 +442,9 @@ export default function DetalheViagem() {
                 <Package size={36} aria-hidden="true" />
                 <h2>Nenhuma encomenda associada</h2>
                 <p className="texto-suave">
-                  A associação de encomendas a viagens será liberada junto com a tela de gestão de
-                  encomendas.
+                  {podeAssociar
+                    ? 'Use “Associar encomenda” para escolher entre as encomendas elegíveis para esta rota.'
+                    : 'Esta viagem foi encerrada sem encomendas associadas.'}
                 </p>
               </div>
             )}
@@ -394,11 +459,19 @@ export default function DetalheViagem() {
                   {encomendas.map((e) => (
                     <li key={e.id} className="gestao__cartao">
                       <span className="gestao__cartao-topo">
-                        <strong className="gestao__nome">{e.codigo_rastreio}</strong>
+                        <Link to={caminhoDetalheEmpresa(e.codigo_rastreio)} className="gestao__nome">
+                          {e.codigo_rastreio}
+                        </Link>
                         <StatusBadge status={e.status} />
                       </span>
                       <span>{e.descricao}</span>
                       <span className="texto-suave">Destino: {e.destino_nome ?? '—'}</span>
+                      {podeRemover && (
+                        <button type="button" className="btn btn--contorno" onClick={() => setRemovendo(e)}>
+                          <Trash2 size={14} aria-hidden="true" />
+                          Remover da viagem
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -470,6 +543,25 @@ export default function DetalheViagem() {
           />
         </div>
       </div>
+
+      {associando && (
+        <AssociarEncomendaModal
+          viagem={viagem}
+          aoFechar={() => setAssociando(false)}
+          aoAssociar={atualizarEncomendas}
+          aoConflito={aoConflitoDeEncomendas}
+        />
+      )}
+
+      {removendo && (
+        <DesassociarEncomendaModal
+          viagem={viagem}
+          encomenda={removendo}
+          aoFechar={() => setRemovendo(null)}
+          aoRemovida={aoEncomendaRemovida}
+          aoConflito={aoConflitoDeEncomendas}
+        />
+      )}
 
       {cancelando && (
         <CancelarViagemModal

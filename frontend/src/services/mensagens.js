@@ -25,6 +25,23 @@ const TRADUCOES = {
   'So e possivel registrar localizacao em viagem em andamento.':
     'Só é possível registrar a localização de uma viagem em andamento.',
   'A parada nao pertence a rota da viagem.': 'Esta parada não pertence à rota da viagem.',
+  'So e possivel associar encomendas a viagens programadas ou em andamento.':
+    'Só é possível associar encomendas a viagens programadas ou em andamento.',
+  'Encomenda ja esta associada a uma viagem ativa.': 'Esta encomenda já está associada a uma viagem ativa.',
+  'So e possivel associar encomendas com status recebida ou aguardando_embarque.':
+    'Só é possível associar encomendas com status Recebida ou Aguardando embarque.',
+  'A encomenda nao tem destino definido.': 'A encomenda não tem destino definido.',
+  'O destino da encomenda nao pertence a rota da viagem.':
+    'O destino da encomenda não faz parte da rota desta viagem.',
+  'A embarcacao da viagem nao tem capacidade para mais encomendas.':
+    'A embarcação desta viagem não tem capacidade para mais encomendas.',
+  'Nao e possivel programar viagem com embarcacao inativa.':
+    'Não é possível programar viagem com embarcação inativa.',
+  'Nao e possivel programar viagem com rota sem paradas.':
+    'Não é possível programar viagem com uma rota sem paradas.',
+  'So e possivel remover encomendas de viagens programadas.':
+    'Só é possível remover encomendas de viagens programadas.',
+  'A encomenda nao esta associada a esta viagem.': 'Esta encomenda não está associada a esta viagem.',
   'Informe nome e cpf da pessoa autorizada.': 'Informe o nome e o CPF da pessoa autorizada.',
   'Encomenda ja entregue: nao e possivel cadastrar pessoa autorizada.':
     'Esta encomenda já foi entregue: não é possível cadastrar pessoa autorizada.',

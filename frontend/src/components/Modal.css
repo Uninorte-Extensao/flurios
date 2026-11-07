@@ -10,6 +10,10 @@
   overflow: auto;
 }
 
+.modal.modal--largo {
+  width: min(720px, calc(100vw - 2 * var(--espaco-4)));
+}
+
 .modal::backdrop {
   background: rgba(10, 47, 82, 0.5);
 }

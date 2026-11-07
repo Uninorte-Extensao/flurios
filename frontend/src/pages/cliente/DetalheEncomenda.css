@@ -45,66 +45,6 @@
   overflow-wrap: anywhere;
 }
 
-/* Linha do tempo vertical: mais recente no topo */
-.linha-do-tempo {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.linha-do-tempo__item {
-  position: relative;
-  padding: 0 0 var(--espaco-4) var(--espaco-5);
-}
-
-.linha-do-tempo__item:last-child {
-  padding-bottom: 0;
-}
-
-.linha-do-tempo__item::before {
-  content: '';
-  position: absolute;
-  top: 14px;
-  bottom: -2px;
-  left: 6px;
-  width: 2px;
-  background: var(--azul-claro);
-}
-
-.linha-do-tempo__item:last-child::before {
-  display: none;
-}
-
-.linha-do-tempo__ponto {
-  position: absolute;
-  top: 3px;
-  left: 0;
-  width: 14px;
-  height: 14px;
-  border: 3px solid var(--azul);
-  border-radius: 50%;
-  background: var(--branco);
-}
-
-.linha-do-tempo__item--atual .linha-do-tempo__ponto {
-  border-color: var(--verde-escuro);
-  background: var(--verde);
-}
-
-.linha-do-tempo__conteudo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--espaco-1) var(--espaco-3);
-}
-
-.linha-do-tempo__local {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espaco-1);
-  font-weight: 700;
-}
-
 /* Cards laterais */
 .detalhe__pessoa {
   display: flex;

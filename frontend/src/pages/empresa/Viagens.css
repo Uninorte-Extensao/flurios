@@ -109,6 +109,15 @@
   background: var(--coral);
 }
 
+/* Ocupação + botão "Associar encomenda" no cabeçalho do card de encomendas */
+.viagem__acoes-encomendas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--espaco-3) var(--espaco-4);
+}
+
 .viagem__cards {
   margin-top: var(--espaco-3);
 }
