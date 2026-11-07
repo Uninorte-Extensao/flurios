@@ -27,6 +27,11 @@
   color: var(--branco);
 }
 
+.badge--cinza {
+  background: var(--cinza-claro);
+  color: var(--cinza);
+}
+
 .badge--vermelho {
   background: var(--coral);
   color: var(--branco);

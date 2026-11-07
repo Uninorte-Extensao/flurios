@@ -1,0 +1,42 @@
+.modal {
+  width: min(480px, calc(100vw - 2 * var(--espaco-4)));
+  max-height: calc(100vh - 2 * var(--espaco-4));
+  padding: 0;
+  border: 0;
+  border-radius: var(--raio);
+  background: var(--branco);
+  color: var(--texto);
+  box-shadow: 0 10px 40px rgba(10, 47, 82, 0.3);
+  overflow: auto;
+}
+
+.modal::backdrop {
+  background: rgba(10, 47, 82, 0.5);
+}
+
+.modal__conteudo {
+  padding: var(--espaco-5);
+}
+
+.modal__titulo {
+  margin-bottom: var(--espaco-4);
+  font-size: 18px;
+}
+
+.modal__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espaco-2);
+  margin-top: var(--espaco-2);
+}
+
+@media (max-width: 480px) {
+  .modal__conteudo {
+    padding: var(--espaco-4);
+  }
+
+  .modal__acoes .btn {
+    flex: 1 1 100%;
+  }
+}

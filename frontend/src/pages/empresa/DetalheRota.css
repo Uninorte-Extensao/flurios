@@ -1,0 +1,68 @@
+.detalhe-rota__voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  margin-bottom: var(--espaco-3);
+}
+
+/* Sequência à esquerda, formulário de nova parada à direita (mesma proporção da Nova encomenda) */
+.detalhe-rota__corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+.detalhe-rota__sequencia {
+  margin-bottom: var(--espaco-3);
+  color: var(--azul);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.detalhe-rota__ordem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.detalhe-rota__dica {
+  margin-top: var(--espaco-3);
+}
+
+.detalhe-rota__cards {
+  margin-top: var(--espaco-3);
+}
+
+.detalhe-rota__cards .gestao__cartao {
+  box-shadow: none;
+  border: 1px solid var(--borda);
+}
+
+.detalhe-rota__cards .gestao__cartao-topo {
+  justify-content: flex-start;
+}
+
+/* Tabela no desktop, cards no mobile */
+@media (max-width: 900px) {
+  .detalhe-rota__corpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .detalhe-rota__tabela {
+    display: none;
+  }
+
+  .detalhe-rota__cards {
+    display: grid;
+  }
+}

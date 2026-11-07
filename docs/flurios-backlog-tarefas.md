@@ -164,7 +164,9 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | F.2 | Tela de cadastro de cliente | P0 | 🟢 | 2.3 |
 | F.3 | ✅ Tela de cadastro de encomenda (lado cliente): origem fixa Manaus, destino e destinatário (existente ou novo), código de rastreio com botão de copiar; menu do cliente com Início, Nova encomenda e Minhas encomendas (rota provisória até a F.4) — concluída | P0 | 🟡 | 3.4, 3.9, 4.7, 2.7 |
 | F.4 | ✅ Tela "meus códigos" + rastreamento com linha do tempo (cliente): lista de encomendas (tabela no desktop, cards no mobile), detalhe com linha do tempo da mais recente para a mais antiga, tela "Encomenda não encontrada", busca do header ligada ao detalhe e pessoa autorizada (CPF mascarado) com cadastro/troca — concluída | P0 | 🟡 | 6.4, 7.3 |
-| F.5 | Telas administrativas: embarcação, rota, viagem | P0 | 🟡 | 4.2, 4.6, 5.2 |
+| F.5 | Telas administrativas: embarcação, rota, viagem — dividida em F.5a (embarcações e rotas) e F.5b (viagens) | P0 | 🟡 | 4.2, 4.6, 5.2 |
+| F.5a | ✅ Telas da empresa para embarcações (`/empresa/embarcacoes`) e rotas (`/empresa/rotas`, com detalhe e paradas em `/empresa/rotas/:id`): lista (tabela no desktop, cards no mobile), cadastro e edição de embarcação, cadastro de rota, adicionar/remover paradas com aviso de que a ordem 1 deve ser Manaus; criar e editar só para administrador, demais perfis em modo leitura (regra só na interface) — concluída | P0 | 🟡 | 4.2, 4.6, F.0 |
+| F.5b | Tela de viagens (empresa): lista, cadastro, atualização de status e cancelamento | P0 | 🟡 | 5.2, 5.4, 5.5, 5.6, F.5a |
 | F.6 | Tela de gestão de encomendas (empresa) | P0 | 🟡 | 3.6 |
 | F.7 | Tela de retirada (funcionário) com termo de compromisso | P0 | 🟡 | 7.4 |
 | F.8 | Tela de dashboard | P1 | 🟢 | 8.1 |
