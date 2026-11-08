@@ -1,0 +1,196 @@
+/* Dashboard da empresa. Tabela e cards de envios usam as classes de Gestao.css. */
+.dashboard {
+  display: grid;
+  gap: var(--espaco-5);
+}
+
+.dashboard__duplo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco-5);
+  align-items: start;
+}
+
+/* Cards de resumo: total em destaque e um card por status */
+.dashboard__resumo {
+  display: grid;
+  gap: var(--espaco-4);
+}
+
+.dashboard__status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco-4);
+}
+
+.kpi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) var(--espaco-4);
+}
+
+.kpi .badge {
+  white-space: normal;
+}
+
+.kpi__numero {
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.kpi__rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  color: var(--cinza);
+  font-weight: 700;
+}
+
+.kpi--principal {
+  padding: var(--espaco-4) var(--espaco-5);
+}
+
+.kpi--principal .card__kpi {
+  color: var(--azul);
+}
+
+.kpi--zero .kpi__numero {
+  color: var(--cinza);
+  font-weight: 400;
+}
+
+.kpi--alerta {
+  border-left: 4px solid var(--coral);
+}
+
+/* Listas com barra (viagens, ocupação, municípios) */
+.dashboard__destaque {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espaco-2);
+  margin-bottom: var(--espaco-4);
+}
+
+.dashboard__lista {
+  display: grid;
+  gap: var(--espaco-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__linha {
+  display: grid;
+  gap: var(--espaco-1);
+}
+
+.dashboard__linha-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.dashboard__linha-rotulo {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard__linha-topo strong {
+  white-space: nowrap;
+}
+
+.dashboard__aviso {
+  color: var(--coral);
+  font-weight: 700;
+}
+
+/* Envios ativos */
+.dashboard__progresso {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 110px;
+}
+
+.dashboard__progresso small {
+  font-weight: 700;
+}
+
+.dashboard__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-top: var(--espaco-3);
+}
+
+.dashboard__cards .gestao__cartao {
+  box-shadow: none;
+  border: 1px solid var(--borda);
+}
+
+/* Movimentações recentes */
+.dashboard__movimentacoes {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__movimentacao {
+  display: grid;
+  gap: var(--espaco-1);
+  padding: var(--espaco-3) 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.dashboard__movimentacao:first-child {
+  padding-top: 0;
+}
+
+.dashboard__movimentacao:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.dashboard__movimentacao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+@media (max-width: 900px) {
+  .dashboard__duplo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard__status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-3);
+  }
+
+  /* 9 status em 2 colunas: o último (imprevisto) ocupa a linha inteira */
+  .dashboard__status > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard__rodape .btn {
+    width: 100%;
+  }
+
+  /* "Atualizar" ocupa a linha e deixa espaço antes do primeiro card */
+  .dashboard__topo .btn {
+    width: 100%;
+    margin-bottom: var(--espaco-4);
+  }
+}

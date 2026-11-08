@@ -1,0 +1,13 @@
+.bloco__vazio {
+  display: grid;
+  justify-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-4) var(--espaco-3);
+  color: var(--azul);
+  text-align: center;
+}
+
+.bloco__vazio p {
+  max-width: 320px;
+  margin: 0;
+}
