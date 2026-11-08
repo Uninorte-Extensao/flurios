@@ -25,6 +25,7 @@ from app.services.encomenda import (
 
 router = APIRouter(prefix="/encomendas", tags=["encomendas"])
 
+MENSAGEM_JA_ENTREGUE = "Encomenda ja entregue: nao e possivel alterar o status."
 MENSAGEM_ENTREGUE_SO_PELA_RETIRADA = (
     "O status entregue so e registrado pela retirada da encomenda."
 )
@@ -126,7 +127,11 @@ def atualizar_status(
     empresa: Empresa = Depends(empresa_logado),
     db: Session = Depends(get_db),
 ):
-    """Muda o status manualmente. `entregue` fica de fora: so a retirada o gera."""
+    """Muda o status manualmente.
+
+    `entregue` fica de fora nos dois sentidos: so a retirada o gera (422) e,
+    uma vez entregue, a encomenda nao muda mais (409).
+    """
     if dados.status == StatusEncomenda.ENTREGUE:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -139,6 +144,12 @@ def atualizar_status(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Encomenda nao encontrada.",
+        )
+
+    if encomenda.status == StatusEncomenda.ENTREGUE:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=MENSAGEM_JA_ENTREGUE,
         )
 
     return atualizar_status_encomenda(db, encomenda, dados.status)
