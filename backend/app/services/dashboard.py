@@ -13,6 +13,9 @@ from app.models.viagem_encomenda import ViagemEncomenda
 # Encomenda que ainda ocupa espaco na embarcacao: nem entregue, nem em imprevisto.
 STATUS_ENCOMENDA_FORA_DA_OCUPACAO = (StatusEncomenda.ENTREGUE, StatusEncomenda.IMPREVISTO)
 
+# Rotulo do grupo de encomendas antigas, cadastradas antes de existir destino na encomenda.
+MUNICIPIO_SEM_DESTINO = "Sem destino definido"
+
 
 def contar_encomendas_por_status(db: Session) -> dict[str, int]:
     """Contagem de encomendas por status. Todos os status aparecem (zero se nao ha)."""
@@ -45,14 +48,31 @@ def contar_viagens_por_status(db: Session) -> dict[str, int]:
 
 
 def contar_encomendas_por_municipio(db: Session) -> list[tuple[str, int]]:
-    """Encomendas por municipio de destino, do maior para o menor total."""
-    return (
-        db.query(Destinatario.municipio, func.count(Encomenda.id))
-        .join(Encomenda, Encomenda.destinatario_id == Destinatario.id)
-        .group_by(Destinatario.municipio)
-        .order_by(func.count(Encomenda.id).desc(), Destinatario.municipio)
+    """Encomendas por municipio de destino, do maior para o menor total.
+
+    O destino e o da propria encomenda (parada_destino_id), nao o municipio do
+    destinatario. Paradas de rotas diferentes com o mesmo nome contam juntas.
+    Encomendas antigas, sem parada de destino, entram em um grupo proprio
+    (MUNICIPIO_SEM_DESTINO), sempre por ultimo.
+    """
+    linhas = (
+        db.query(Parada.nome, func.count(Encomenda.id))
+        .select_from(Encomenda)
+        .outerjoin(Parada, Parada.id == Encomenda.parada_destino_id)
+        .group_by(Parada.nome)
         .all()
     )
+
+    com_destino = sorted(
+        ((nome, total) for nome, total in linhas if nome is not None),
+        key=lambda linha: (-linha[1], linha[0]),
+    )
+    sem_destino = sum(total for nome, total in linhas if nome is None)
+
+    if sem_destino:
+        com_destino.append((MUNICIPIO_SEM_DESTINO, sem_destino))
+
+    return com_destino
 
 
 def calcular_ocupacao_viagens_em_andamento(db: Session) -> list[dict]:
