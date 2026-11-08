@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { caminhoDaBusca } from '../utils/navegacao'
+import { capitalizarNome } from '../utils/nome'
 import { itensDoMenuParaUsuario } from '../utils/perfil'
 import { MENUS, ROTULOS_PERFIL_EMPRESA } from '../routes/menus'
 import BottomNav from './BottomNav'
@@ -34,7 +35,7 @@ export default function AppLayout({ area }) {
   return (
     <div className="app">
       <Header
-        nomeUsuario={usuario?.nome}
+        nomeUsuario={capitalizarNome(usuario?.nome)}
         rotuloUsuario={rotuloUsuario}
         placeholderBusca={menu.placeholderBusca}
         aoBuscar={aoBuscar}
