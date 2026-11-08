@@ -493,12 +493,7 @@ def test_fluxo_completo_e_caminho_de_excecao(api, v):
 
 
 def test_regras_de_transicao_de_status_da_encomenda(api, v):
-    """Sonda: o PATCH de status aceita saltos que quebram a ordem do fluxo?
-
-    O CLAUDE.md define a ordem pendente -> recebida -> ... -> entregue, mas nao
-    diz explicitamente que saltos/retrocessos sao proibidos. A sonda registra o
-    que a API aceita hoje.
-    """
+    """O PATCH de status recusa saltos e retrocessos (F-1, corrigido): 409; perfil e erros de entrada seguem iguais."""
     admin = login(api, "admin@flurios.com")
     cliente, _ = criar_cliente(api, "Maria", "maria2@exemplo.com", CPF_CLIENTE)
     r = api.post("/embarcacoes", json={"nome": "B", "capacidade": 2}, headers=admin)
@@ -517,8 +512,21 @@ def test_regras_de_transicao_de_status_da_encomenda(api, v):
         headers=cliente,
     ).json()
 
+    # F-1 (corrigido): salto e retrocesso sao recusados com 409 e o status nao muda
     r = mudar_status(api, admin, enc["id"], "a_retirar")
-    v.conhecido(r.status_code != 200, "F-1", "salto pendente -> a_retirar deveria ser recusado (a API aceitou)")
+    v.igual(r.status_code, 409, "salto pendente -> a_retirar e recusado")
+    v.igual(
+        r.json().get("detail"),
+        "Transicao de status invalida: pendente -> a_retirar.",
+        "mensagem do salto recusado",
+    )
+    v.igual(
+        api.get(f"/encomendas/{enc['codigo_rastreio']}", headers=cliente).json()["status"],
+        "pendente",
+        "salto recusado nao altera o status",
+    )
+    v.igual(mudar_status(api, admin, enc["id"], "recebida").status_code, 200, "pendente -> recebida")
+    v.igual(mudar_status(api, admin, enc["id"], "pendente").status_code, 409, "retrocesso recebida -> pendente e recusado")
     r = mudar_status(api, cliente, enc["id"], "recebida")
     v.igual(r.status_code, 403, "cliente nao muda status")
     r = mudar_status(api, admin, enc["id"], "status_que_nao_existe")

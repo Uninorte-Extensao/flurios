@@ -279,7 +279,10 @@ def test_repetir_o_mesmo_status_nao_duplica_item_na_linha_do_tempo(
     encomenda = _criar_encomenda(client, headers_cliente, rota_com_paradas.destino.id)
 
     _status_encomenda(client, headers_administrador, encomenda, "recebida")
-    _status_encomenda(client, headers_administrador, encomenda, "recebida")
+    repetida = client.patch(
+        f"/encomendas/{encomenda['id']}/status", json={"status": "recebida"}, headers=headers_administrador
+    )
+    assert repetida.status_code == 409
 
     assert _resumo(_linha_do_tempo(client, headers_cliente, encomenda)) == [
         ("pendente", None, None),

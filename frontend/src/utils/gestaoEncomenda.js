@@ -1,4 +1,4 @@
-// Regras da gestão de encomendas pela empresa (as que só valem na tela estão marcadas).
+// Regras da gestão de encomendas pela empresa.
 
 export const FILTRO_TODOS = 'todos'
 export const ITENS_POR_PAGINA = 10
@@ -18,9 +18,9 @@ export const ROTULOS_STATUS = {
 // Opções do filtro de status da lista: [valor, rótulo].
 export const FILTROS_STATUS = [[FILTRO_TODOS, 'Todos os status'], ...Object.entries(ROTULOS_STATUS)]
 
-// SÓ NA TELA: o backend aceita qualquer status em PATCH /encomendas/{id}/status. Aqui só se oferece o
-// próximo passo do fluxo ou "imprevisto". "Entregue" não aparece: só nasce da retirada (termo de
-// compromisso + pessoa autorizada). De "imprevisto" só se volta para "recebida" (realocar).
+// Mesma tabela do backend (TRANSICOES_MANUAIS em services/encomenda.py), que responde 409 fora dela.
+// Aqui só se oferece o próximo passo do fluxo ou "imprevisto". "Entregue" não aparece: só nasce da
+// retirada (termo de compromisso + pessoa autorizada). De "imprevisto" só se volta para "recebida" (realocar).
 const TRANSICOES_MANUAIS = {
   pendente: ['recebida', 'imprevisto'],
   recebida: ['aguardando_embarque', 'imprevisto'],

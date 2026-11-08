@@ -207,7 +207,15 @@ def _percorrer_fluxo_completo(
     api.request("GET", f"/encomendas/{encomenda_id}/pessoa-autorizada", headers=headers_novo)
     api.request("GET", f"/encomendas/{encomenda_id}/pessoa-autorizada", headers=headers_empresa)
 
-    api.request("PATCH", f"/encomendas/{encomenda_id}/status", json={"status": StatusEncomenda.A_RETIRAR.value}, headers=headers_empresa)
+    for etapa in (
+        StatusEncomenda.RECEBIDA,
+        StatusEncomenda.AGUARDANDO_EMBARQUE,
+        StatusEncomenda.EMBARCADA,
+        StatusEncomenda.EM_TRANSITO,
+        StatusEncomenda.CHEGOU_AO_DESTINO,
+        StatusEncomenda.A_RETIRAR,
+    ):
+        api.request("PATCH", f"/encomendas/{encomenda_id}/status", json={"status": etapa.value}, headers=headers_empresa)
     retirar = f"/encomendas/{encomenda_id}/retirada"
     api.request("POST", retirar, json={"cpf_retirante": CPF_CLIENTE, "termo_aceito": True}, headers=headers_retirada)
     api.request("POST", retirar, json={"cpf_retirante": CPF_INVALIDO_ENVIADO, "termo_aceito": True}, headers=headers_retirada)

@@ -21,6 +21,7 @@ from app.services.encomenda import (
     buscar_encomenda_por_id,
     criar_encomenda,
     listar_encomendas_do_cliente,
+    transicao_manual_valida,
 )
 
 router = APIRouter(prefix="/encomendas", tags=["encomendas"])
@@ -130,7 +131,8 @@ def atualizar_status(
     """Muda o status manualmente.
 
     `entregue` fica de fora nos dois sentidos: so a retirada o gera (422) e,
-    uma vez entregue, a encomenda nao muda mais (409).
+    uma vez entregue, a encomenda nao muda mais (409). As demais mudancas seguem
+    `TRANSICOES_MANUAIS`; fora dela a resposta e 409.
     """
     if dados.status == StatusEncomenda.ENTREGUE:
         raise HTTPException(
@@ -150,6 +152,15 @@ def atualizar_status(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=MENSAGEM_JA_ENTREGUE,
+        )
+
+    if not transicao_manual_valida(encomenda.status, dados.status):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Transicao de status invalida: "
+                f"{encomenda.status.value} -> {dados.status.value}."
+            ),
         )
 
     return atualizar_status_encomenda(db, encomenda, dados.status)

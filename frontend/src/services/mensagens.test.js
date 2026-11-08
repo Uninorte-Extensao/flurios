@@ -29,6 +29,13 @@ test('transição inválida de viagem cita os dois status em português', () => 
   )
 })
 
+test('transição inválida de encomenda cita os dois status em português', () => {
+  assert.equal(
+    traduzirMensagem('Transicao de status invalida: pendente -> a_retirar.'),
+    'Não é possível mudar a encomenda de “Pendente” para “A retirar”.',
+  )
+})
+
 test('mensagem desconhecida volta como veio, ou usa o padrão', () => {
   assert.equal(traduzirMensagem('Algo inesperado.'), 'Algo inesperado.')
   assert.equal(traduzirMensagem('Algo inesperado.', 'Erro padrão.'), 'Erro padrão.')

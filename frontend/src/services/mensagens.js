@@ -65,7 +65,19 @@ const STATUS_VIAGEM = {
   cancelada: 'cancelada',
 }
 
-// "Transicao de status invalida: programada -> concluida." (a mensagem leva os dois status)
+const STATUS_ENCOMENDA = {
+  pendente: 'Pendente',
+  recebida: 'Recebida',
+  aguardando_embarque: 'Aguardando embarque',
+  embarcada: 'Embarcada',
+  em_transito: 'Em trânsito',
+  chegou_ao_destino: 'Chegou ao destino',
+  a_retirar: 'A retirar',
+  entregue: 'Entregue',
+  imprevisto: 'Imprevisto',
+}
+
+// "Transicao de status invalida: programada -> concluida." (a mensagem leva os dois status, de viagem ou de encomenda)
 const TRANSICAO_VIAGEM = /^Transicao de status invalida: (\w+) -> (\w+)\.$/
 
 export function traduzirMensagem(texto, padrao) {
@@ -74,6 +86,10 @@ export function traduzirMensagem(texto, padrao) {
   const transicao = TRANSICAO_VIAGEM.exec(limpo)
   if (transicao && transicao[1] in STATUS_VIAGEM && transicao[2] in STATUS_VIAGEM) {
     return `Não é possível mudar a viagem de ${STATUS_VIAGEM[transicao[1]]} para ${STATUS_VIAGEM[transicao[2]]}.`
+  }
+
+  if (transicao && transicao[1] in STATUS_ENCOMENDA && transicao[2] in STATUS_ENCOMENDA) {
+    return `Não é possível mudar a encomenda de “${STATUS_ENCOMENDA[transicao[1]]}” para “${STATUS_ENCOMENDA[transicao[2]]}”.`
   }
 
   return TRADUCOES[limpo] ?? padrao ?? limpo

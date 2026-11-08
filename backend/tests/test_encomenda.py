@@ -509,20 +509,83 @@ def test_patch_entregue_e_recusado_antes_de_procurar_a_encomenda(client, headers
     assert response.status_code == 422
 
 
-def test_patch_continua_aceitando_os_demais_status(
+TRANSICOES_VALIDAS = [
+    ("pendente", "recebida"),
+    ("recebida", "aguardando_embarque"),
+    ("aguardando_embarque", "embarcada"),
+    ("embarcada", "em_transito"),
+    ("em_transito", "chegou_ao_destino"),
+    ("chegou_ao_destino", "a_retirar"),
+    ("pendente", "imprevisto"),
+    ("recebida", "imprevisto"),
+    ("aguardando_embarque", "imprevisto"),
+    ("embarcada", "imprevisto"),
+    ("em_transito", "imprevisto"),
+    ("chegou_ao_destino", "imprevisto"),
+    ("a_retirar", "imprevisto"),
+    ("imprevisto", "recebida"),
+]
+
+
+@pytest.mark.parametrize("atual, novo", TRANSICOES_VALIDAS)
+def test_patch_aceita_as_transicoes_validas(
+    client, db_session, headers_administrador, criar_encomenda_no_banco, atual, novo
+):
+    encomenda = criar_encomenda_no_banco(StatusEncomenda(atual))
+
+    response = client.patch(
+        f"/encomendas/{encomenda.id}/status",
+        json={"status": novo},
+        headers=headers_administrador,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == novo
+    assert db_session.query(Movimentacao).filter_by(encomenda_id=encomenda.id).count() == 2
+
+
+# Tudo o que nao esta em TRANSICOES_VALIDAS responde 409. Fora da conta: "entregue" como destino
+# (422, so a retirada) e "entregue" como origem (409 com mensagem propria, testes acima).
+TRANSICOES_INVALIDAS = [
+    (atual.value, novo.value)
+    for atual in StatusEncomenda
+    for novo in StatusEncomenda
+    if StatusEncomenda.ENTREGUE not in (atual, novo)
+    and (atual.value, novo.value) not in TRANSICOES_VALIDAS
+]
+
+
+@pytest.mark.parametrize("atual, novo", TRANSICOES_INVALIDAS)
+def test_patch_recusa_as_transicoes_invalidas_com_409(
+    client, db_session, headers_administrador, criar_encomenda_no_banco, atual, novo
+):
+    encomenda = criar_encomenda_no_banco(StatusEncomenda(atual))
+
+    response = client.patch(
+        f"/encomendas/{encomenda.id}/status",
+        json={"status": novo},
+        headers=headers_administrador,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == f"Transicao de status invalida: {atual} -> {novo}."
+    db_session.refresh(encomenda)
+    assert encomenda.status.value == atual
+    assert db_session.query(Movimentacao).filter_by(encomenda_id=encomenda.id).count() == 1
+
+
+def test_salto_de_pendente_para_a_retirar_e_recusado(
     client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
-    for novo in [s for s in StatusEncomenda if s != StatusEncomenda.ENTREGUE]:
-        encomenda = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
 
-        response = client.patch(
-            f"/encomendas/{encomenda.id}/status",
-            json={"status": novo.value},
-            headers=headers_administrador,
-        )
+    response = client.patch(
+        f"/encomendas/{encomenda.id}/status",
+        json={"status": "a_retirar"},
+        headers=headers_administrador,
+    )
 
-        assert response.status_code == 200, novo
-        assert response.json()["status"] == novo.value
+    assert response.status_code == 409
 
 
 def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db_session, rota_com_paradas):
@@ -538,12 +601,12 @@ def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db
 
     response = client.patch(
         f"/encomendas/{criada['id']}/status",
-        json={"status": "aguardando_embarque"},
+        json={"status": "recebida"},
         headers={"Authorization": f"Bearer {token_atendente}"},
     )
 
     assert response.status_code == 200
-    assert response.json()["status"] == "aguardando_embarque"
+    assert response.json()["status"] == "recebida"
 
 
 def test_atualizar_status_encomenda_sem_token_retorna_401(client, db_session, rota_com_paradas):
