@@ -75,7 +75,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 3.4 | Endpoint `POST /encomendas` (cadastro) | P0 | 🟡 | 3.2, 3.3 |
 | 3.5 | Endpoint `GET /encomendas/{codigo}` | P0 | 🟢 | 3.4 |
 | 3.6 | Endpoint `GET /encomendas?cliente_id=` (lista do cliente) | P1 | 🟢 | 3.4 |
-| 3.7 | Endpoint `PATCH /encomendas/{id}/status` (acao de Empresa, nao de Cliente; **`entregue` nao e aceito aqui, so a retirada gera: 422 — A.5**) | P0 | 🟡 | 3.3, 1.10 |
+| 3.7 | Endpoint `PATCH /encomendas/{id}/status` (acao de Empresa, nao de Cliente; **`entregue` nao e aceito aqui, so a retirada gera: 422 — A.5; e quem ja esta `entregue` nao muda mais: 409 — B.3**) | P0 | 🟡 | 3.3, 1.10 |
 | 3.8 | Testes automatizados (cadastro, geração de código, mudança de status) | P1 | 🟡 | 3.7 |
 | 3.9 | ✅ Destino na encomenda: `parada_destino_id` (nullable na migration, obrigatório em `POST /encomendas`, não pode ser a parada de ordem 1/origem); `EncomendaOut` devolve `destino_nome` | P0 | 🟡 | 3.4, 4.6 |
 
@@ -151,7 +151,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | 8.2 | Endpoint com contagem de viagens em andamento | P1 | 🟢 | 5.4 |
 | 8.3 | Endpoint com contagem por município de destino (**agrupa pelo destino real da encomenda, `parada_destino_id` — A.4**) | P2 | 🟡 | 6.4 |
 | 8.4 | ✅ Endpoint `GET /dashboard/ocupacao` (ocupação por viagem em andamento) — concluída | P1 | 🟡 | 5.4 |
-| 8.5 | ✅ Endpoint `GET /dashboard/envios-ativos` (progresso e próxima parada) — concluída | P1 | 🟡 | 6.4 |
+| 8.5 | ✅ Endpoint `GET /dashboard/envios-ativos` (progresso e próxima parada; `municipio_destino` pelo destino real da encomenda — B.2) — concluída | P1 | 🟡 | 6.4 |
 | 8.6 | ✅ Endpoint `GET /dashboard/movimentacoes-recentes` (com limite) — concluída | P1 | 🟢 | 6.1 |
 
 ---
@@ -190,13 +190,29 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 | A.9 | ✅ Senha mínima no backend (`fix/senha-minima-no-backend`): a regra de 6 caracteres existia só no formulário (`SENHA_MINIMA` em `CadastroCliente.jsx`) e a API aceitava 1 caractere. **Escolha: mover para o backend** — `UsuarioCreate` valida (422, mensagem em português, a senha não volta na resposta). O login **não** valida tamanho, para não barrar contas criadas antes. O aviso do formulário ficou como espelho (resposta imediata), com comentário apontando o backend | P1 | 🟢 | 1.5 |
 | A.10 | ✅ Saudação com nome capitalizado (`fix/front-saudacao-nome-capitalizado`): "Olá, kaue souza" → "Olá, Kaue Souza" (preposições da/de/dos/e em minúscula, acentos, hífen e apóstrofo tratados; só apresentação, o cadastro não muda). `utils/nome.js` | P2 | 🟢 | F.4 |
 
-**Pontos em aberto (vistos durante o lote, fora do escopo pedido):**
-- `GET /dashboard/envios-ativos` ainda devolve `municipio_destino` a partir do município do **destinatário**, enquanto `/dashboard/municipios` agora usa o destino real (A.4): os dois podem divergir.
-- O menu lateral (web) continua com "Painel Operacional" e "Dashboard" apontando para a mesma tela, como no menu definido no `CLAUDE.md`; só a barra mobile perdeu a redundância.
-- A barra do cliente (3 itens) não tem "Mais", então no mobile o cliente segue sem Suporte e Sair.
-- O nome do usuário no header continua como foi cadastrado (a capitalização do A.10 vale só para a saudação).
-- `PATCH /encomendas/{id}/status` aceita sair de `entregue` para outro status (só a tela bloqueia).
-- Outros `<select>` com texto longo (ex.: embarcação e rota no modal de programar viagem) não foram revisados.
+**Pontos em aberto do lote 1** (situação após o lote 2):
+- ✅ `/dashboard/envios-ativos` com `municipio_destino` do destinatário → resolvido em B.2.
+- ✅ Cliente no mobile sem Suporte e Sair → resolvido em B.1.
+- ✅ Nome do usuário no header sem capitalizar → resolvido em B.4.
+- ✅ `PATCH` aceitava sair de `entregue` → resolvido em B.3.
+- ✅ Select do modal de programar viagem → resolvido em B.5.
+- Em aberto: o menu lateral (web) continua com "Painel Operacional" e "Dashboard" apontando para a mesma tela, como no menu definido no `CLAUDE.md`; só a barra mobile perdeu a redundância.
+
+---
+
+## ACABAMENTO DA PRIMEIRA VERSÃO — LOTE 2
+*Mesmas regras do lote 1: branch `fix/...` e um commit por item, merge em `develop` só com `pytest`, `npm run lint`, `npm test` e `npm run build` passando, cada um em comando próprio. Backend: 431 → 445 testes; frontend: 105 → 107 (testes novos do `barraTemMais` em `utils/navegacao.test.js`).*
+
+| # | Tarefa | Prioridade | Dificuldade | Depende de |
+|---|---|---|---|---|
+| B.1 | ✅ Cliente no mobile com "Mais" (`fix/front-cliente-mobile-mais`): a barra do cliente (Início, Nova encomenda, Minhas encomendas) ganhou o botão "Mais", que abre **Suporte e Sair**; antes o cliente não tinha como sair nem pedir suporte no celular. O "Mais" agora existe em toda área (`barraTemMais` em `utils/navegacao.js`): na empresa abre também os itens que não couberam, no cliente só Suporte e Sair (sem divisor). Print 36 | P1 | 🟢 | A.6 |
+| B.2 | ✅ `envios-ativos` pelo destino real (`fix/dashboard-envios-ativos-destino-real`): `municipio_destino` vem de `parada_destino_id` (nome da parada), não do município do destinatário; sem destino, "Sem destino definido" (constante `MUNICIPIO_SEM_DESTINO`, a mesma do bloco de municípios, e teste garante que os dois blocos contam igual). O frontend não mudou: já exibia o campo | P1 | 🟡 | A.4, 8.5 |
+| B.3 | ✅ Nada muda a partir de `entregue` (`fix/bloqueia-mudanca-a-partir-de-entregue`): `PATCH /encomendas/{id}/status` em encomenda entregue responde **409** "Encomenda ja entregue: nao e possivel alterar o status." (qualquer perfil da empresa, qualquer novo status; sem alterar nada nem gravar movimentação), com a mensagem traduzida em `mensagens.js`. A ordem das checagens é: `entregue` como destino → 422 (A.5), encomenda inexistente → 404, encomenda já entregue → 409 | P0 | 🟢 | A.5 |
+| B.4 | ✅ Nome capitalizado no header (`fix/front-header-nome-capitalizado`): `capitalizarNome` (a mesma função da saudação) aplicada no `AppLayout`: "Cliente: Kaue Souza". Vale para cliente e empresa; só apresentação | P2 | 🟢 | A.10 |
+| B.5 | ✅ Selects do modal de programar viagem (`fix/front-selects-programar-viagem`): **havia texto cortado** (medido no navegador: no celular, embarcação "Comandante Rodrigues de Albuquerque III (capacidade 50)" e rota "Manaus - Itacoatiara - Parintins (linha expressa via Rio Amazonas)"; no desktop, a rota). Como o `<select>` nativo não quebra linha, o texto completo da opção escolhida aparece embaixo do campo (via `ajuda` do `CampoSelecao`), e todo select fechado ganha reticências (`text-overflow: ellipsis` em `base.css`). Prints 37 (antes) e 38 (depois) | P1 | 🟢 | A.8, F.5b |
+
+**Pontos em aberto do lote 2:**
+- O select de destinatário da "Nova encomenda" (cliente) também corta no celular a 360px ("Joao Pereira · Parintins · CPF 222.***.***-05": ~275px de texto para ~230px de espaço); hoje só ganhou as reticências. Os demais selects (filtros de Encomendas e Viagens, parada em Detalhe da viagem, status em Detalhe da encomenda) não foram medidos.
 
 ---
 
