@@ -1,15 +1,16 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.mascaramento import CpfMascarado
 from app.models.encomenda import StatusEncomenda
 from app.models.viagem import StatusViagem
 
+
 class EncomendaCreate(BaseModel):
     destinatario_id: int
     parada_destino_id: int
-    descricao: str
+    descricao: str = Field(min_length=1, max_length=255)
 
 
 class EncomendaStatusUpdate(BaseModel):

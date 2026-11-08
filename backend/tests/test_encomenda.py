@@ -188,6 +188,50 @@ def test_cadastrar_encomenda_sucesso(client, db_session, rota_com_paradas):
     assert corpo["destino_nome"] == "Tefe"
 
 
+def _cadastrar_com_descricao(client, db_session, rota_com_paradas, *descricoes):
+    """Cadastra um cliente e posta uma encomenda por descricao; devolve as respostas."""
+    _, destinatario, token = _cadastrar_cliente_logado_com_destinatario(db_session)
+
+    return [
+        client.post(
+            "/encomendas",
+            json={
+                "descricao": descricao,
+                "destinatario_id": destinatario.id,
+                "parada_destino_id": rota_com_paradas.destino.id,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        for descricao in descricoes
+    ]
+
+
+def test_cadastrar_encomenda_com_descricao_vazia_retorna_422(client, db_session, rota_com_paradas):
+    [response] = _cadastrar_com_descricao(client, db_session, rota_com_paradas, "")
+
+    assert response.status_code == 422
+    assert db_session.query(Encomenda).count() == 0
+
+
+def test_cadastrar_encomenda_com_descricao_maior_que_255_retorna_422(client, db_session, rota_com_paradas):
+    [response] = _cadastrar_com_descricao(client, db_session, rota_com_paradas, "a" * 256)
+
+    assert response.status_code == 422
+    assert db_session.query(Encomenda).count() == 0
+
+
+def test_cadastrar_encomenda_aceita_descricao_nos_limites_de_1_e_255_caracteres(
+    client, db_session, rota_com_paradas
+):
+    curta, longa = _cadastrar_com_descricao(
+        client, db_session, rota_com_paradas, "a", "b" * 255
+    )
+
+    assert curta.status_code == 201
+    assert longa.status_code == 201
+    assert longa.json()["descricao"] == "b" * 255
+
+
 def test_cadastrar_encomenda_sem_token_retorna_401(client, db_session, rota_com_paradas):
     _, destinatario = _cadastrar_cliente_com_destinatario(db_session)
     dados = {**DADOS_ENCOMENDA, "destinatario_id": destinatario.id, "parada_destino_id": rota_com_paradas.destino.id}
