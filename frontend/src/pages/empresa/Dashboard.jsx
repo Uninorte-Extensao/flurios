@@ -18,6 +18,7 @@ import {
 import {
   caminhoViagem,
   ENVIOS_POR_VEZ,
+  envioSemViagem,
   formatarNumero,
   LIMITE_MOVIMENTACOES,
   limitarEnvios,
@@ -157,6 +158,13 @@ function Municipios({ dados }) {
   )
 }
 
+// Envio sem viagem não tem progresso a mostrar: em vez da barra em 0%, avisa que ainda não saiu.
+function ProgressoDoEnvio({ envio }) {
+  if (envioSemViagem(envio)) return <span className="texto-suave">Ainda não saiu</span>
+
+  return <Progresso proporcao={envio.progresso} />
+}
+
 function Progresso({ proporcao }) {
   const pct = percentual(proporcao)
 
@@ -186,7 +194,7 @@ function Envios({ dados }) {
     { chave: 'municipio_destino', titulo: 'Destino' },
     { chave: 'proxima_parada', titulo: 'Próxima parada', render: textoProximaParada },
     { chave: 'status', titulo: 'Status', render: (e) => <StatusBadge status={e.status} /> },
-    { chave: 'progresso', titulo: 'Progresso', render: (e) => <Progresso proporcao={e.progresso} /> },
+    { chave: 'progresso', titulo: 'Progresso', render: (e) => <ProgressoDoEnvio envio={e} /> },
   ]
 
   return (
@@ -208,7 +216,7 @@ function Envios({ dados }) {
               {e.destinatario} · {e.municipio_destino}
             </span>
             <span className="texto-suave">Próxima parada: {textoProximaParada(e)}</span>
-            <Progresso proporcao={e.progresso} />
+            <ProgressoDoEnvio envio={e} />
           </li>
         ))}
       </ul>
