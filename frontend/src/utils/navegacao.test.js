@@ -34,6 +34,16 @@ test('a barra da empresa nunca passa de 4 fixos, para nenhum perfil', () => {
   }
 })
 
+test('o painel tem um único item no menu lateral da empresa, sem "Dashboard"', () => {
+  const caminhos = MENUS.empresa.itens.map((i) => i.para)
+  const rotulos = MENUS.empresa.itens.map((i) => i.rotulo)
+
+  assert.equal(caminhos.filter((c) => c === '/empresa').length, 1)
+  assert.ok(!caminhos.includes('/empresa/dashboard'))
+  assert.ok(!rotulos.includes('Dashboard'))
+  assert.equal(new Set(caminhos).size, caminhos.length)
+})
+
 test('a barra da empresa não repete a tela do painel: Início já é o Dashboard', () => {
   const caminhos = MENUS.empresa.barraInferior.map((i) => i.para)
 

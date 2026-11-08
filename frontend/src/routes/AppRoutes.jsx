@@ -79,7 +79,8 @@ export default function AppRoutes() {
             <Route path="retiradas" element={<Retiradas />} />
             <Route path="retiradas/:codigo" element={<RetiradaEncomenda />} />
           </Route>
-          <Route path="dashboard" element={<Dashboard titulo="Dashboard" />} />
+          {/* Endereço antigo do painel: redireciona para o único item de menu, /empresa. */}
+          <Route path="dashboard" element={<Navigate to="/empresa" replace />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>
       </Route>

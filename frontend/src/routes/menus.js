@@ -1,5 +1,4 @@
 import {
-  ChartColumn,
   CircleHelp,
   House,
   LayoutDashboard,
@@ -25,10 +24,9 @@ export const MENUS = {
       { para: '/empresa/viagens', rotulo: 'Viagens', icone: Navigation },
       { para: '/empresa/encomendas', rotulo: 'Encomendas', icone: Package },
       { para: '/empresa/retiradas', rotulo: 'Retiradas', icone: PackageCheck, perfis: PERFIS_RETIRADA },
-      { para: '/empresa/dashboard', rotulo: 'Dashboard', icone: ChartColumn },
     ],
     // A ordem é a prioridade: os 4 primeiros (já filtrados por perfil) ficam fixos e o resto vai
-    // para o "Mais". Sem "Dashboard": Início (/empresa) já abre o mesmo painel.
+    // para o "Mais". O painel tem um único item, na barra e no menu lateral (/empresa/dashboard redireciona).
     barraInferior: [
       { para: '/empresa', rotulo: 'Início', icone: House, exato: true },
       { para: '/empresa/encomendas', rotulo: 'Encomendas', icone: Package },
