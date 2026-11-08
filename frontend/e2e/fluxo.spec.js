@@ -229,6 +229,9 @@ test('05 cliente: detalhe da encomenda e pessoa autorizada (CPF mascarado)', asy
 test('06 atendente: recebe a encomenda, programa viagem e associa', async () => {
   const page = paginas.atendente
   await entrar(page, { email: ATENDENTE.email, senha: SENHA }, /\/empresa$/)
+  // D-2/D-3: encomenda ainda sem viagem aparece como "Sem viagem" / "Ainda não saiu", sem barra em 0%.
+  await expect(page.getByText('Sem viagem').first()).toBeVisible()
+  await expect(page.getByText('Ainda não saiu').first()).toBeVisible()
   await capturar(page, 'atendente-painel')
 
   await page.goto('/empresa/encomendas')
