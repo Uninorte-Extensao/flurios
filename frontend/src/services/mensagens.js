@@ -45,6 +45,8 @@ const TRADUCOES = {
   'Informe nome e cpf da pessoa autorizada.': 'Informe o nome e o CPF da pessoa autorizada.',
   'Encomenda ja entregue: nao e possivel cadastrar pessoa autorizada.':
     'Esta encomenda já foi entregue: não é possível cadastrar pessoa autorizada.',
+  'Encomenda ja entregue: nao e possivel alterar o status.':
+    'Esta encomenda já foi entregue: não é possível alterar o status.',
   'A encomenda ja esta a retirar: nao e possivel trocar a pessoa autorizada.':
     'Esta encomenda já está a retirar: não é possível trocar a pessoa autorizada.',
   'E obrigatorio aceitar o termo de compromisso.': 'É obrigatório aceitar o termo de compromisso.',

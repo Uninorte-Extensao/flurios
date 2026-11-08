@@ -437,6 +437,70 @@ def test_patch_nao_aceita_status_entregue_em_nenhum_status_de_origem(
     assert db_session.query(Movimentacao).filter_by(encomenda_id=encomenda.id).count() == 1
 
 
+@pytest.mark.parametrize(
+    "novo_status", [s for s in StatusEncomenda if s != StatusEncomenda.ENTREGUE]
+)
+def test_patch_recusa_qualquer_mudanca_a_partir_de_entregue(
+    client, db_session, headers_administrador, criar_encomenda_no_banco, novo_status
+):
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.ENTREGUE)
+
+    response = client.patch(
+        f"/encomendas/{encomenda.id}/status",
+        json={"status": novo_status.value},
+        headers=headers_administrador,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Encomenda ja entregue: nao e possivel alterar o status."
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.ENTREGUE
+    assert db_session.query(Movimentacao).filter_by(encomenda_id=encomenda.id).count() == 1
+
+
+def test_patch_a_partir_de_entregue_vale_para_qualquer_perfil_da_empresa(
+    client, db_session, headers_empresa, headers_atendente, criar_encomenda_no_banco
+):
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.ENTREGUE)
+
+    for headers in (headers_empresa, headers_atendente):
+        response = client.patch(
+            f"/encomendas/{encomenda.id}/status", json={"status": "recebida"}, headers=headers
+        )
+
+        assert response.status_code == 409
+
+
+def test_patch_de_encomenda_inexistente_continua_404_para_status_comum(client, headers_administrador):
+    response = client.patch(
+        "/encomendas/9999/status", json={"status": "recebida"}, headers=headers_administrador
+    )
+
+    assert response.status_code == 404
+
+
+def test_retirada_ainda_leva_a_a_retirar_para_entregue_e_depois_trava_o_patch(
+    client, db_session, headers_administrador, headers_funcionario_retirada, criar_encomenda_no_banco
+):
+    from app.models.pessoa_autorizada import PessoaAutorizada
+
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.A_RETIRAR)
+    db_session.add(PessoaAutorizada(encomenda_id=encomenda.id, nome="Ana Souza", cpf="11122233396"))
+    db_session.commit()
+
+    retirada = client.post(
+        f"/encomendas/{encomenda.id}/retirada",
+        json={"cpf_retirante": "11122233396", "termo_aceito": True},
+        headers=headers_funcionario_retirada,
+    )
+    tentativa = client.patch(
+        f"/encomendas/{encomenda.id}/status", json={"status": "a_retirar"}, headers=headers_administrador
+    )
+
+    assert retirada.status_code == 201
+    assert tentativa.status_code == 409
+
+
 def test_patch_entregue_e_recusado_antes_de_procurar_a_encomenda(client, headers_administrador):
     response = client.patch(
         "/encomendas/9999/status", json={"status": "entregue"}, headers=headers_administrador
