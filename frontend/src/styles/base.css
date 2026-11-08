@@ -158,6 +158,11 @@ textarea {
   background: var(--branco);
 }
 
+/* Select fechado com texto maior que o campo: reticências em vez de corte seco */
+select.campo__entrada {
+  text-overflow: ellipsis;
+}
+
 .campo__entrada--area {
   min-height: 96px;
   padding: var(--espaco-3);

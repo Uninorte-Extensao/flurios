@@ -6,6 +6,8 @@ import Modal from '../../components/Modal'
 import { programarViagem } from '../../services/viagens'
 import { dataManausParaApi, validarViagem } from '../../utils/viagem'
 
+const descricaoEmbarcacao = (e) => `${e.nome} (capacidade ${e.capacidade})`
+
 // Programar viagem. `embarcacoes` e `rotas` são as listas completas; só embarcações ativas são
 // oferecidas (regra só da tela: o backend aceita embarcação inativa). `aoProgramada` recebe a viagem criada.
 export default function ViagemModal({ embarcacoes, rotas, aoFechar, aoProgramada }) {
@@ -21,6 +23,10 @@ export default function ViagemModal({ embarcacoes, rotas, aoFechar, aoProgramada
     setCampos((atual) => ({ ...atual, [campo]: valor }))
     setErros((atual) => ({ ...atual, [campo]: undefined }))
   }
+
+  // O select nativo não quebra linha: o texto completo da opção escolhida aparece embaixo do campo.
+  const embarcacaoEscolhida = ativas.find((e) => String(e.id) === campos.embarcacaoId)
+  const rotaEscolhida = rotas.find((r) => String(r.id) === campos.rotaId)
 
   async function enviar(evento) {
     evento.preventDefault()
@@ -74,12 +80,13 @@ export default function ViagemModal({ embarcacoes, rotas, aoFechar, aoProgramada
           value={campos.embarcacaoId}
           onChange={(e) => alterar('embarcacaoId', e.target.value)}
           erro={erros.embarcacaoId}
+          ajuda={embarcacaoEscolhida && descricaoEmbarcacao(embarcacaoEscolhida)}
           disabled={ativas.length === 0}
         >
           <option value="">Escolha a embarcação</option>
           {ativas.map((e) => (
             <option key={e.id} value={e.id}>
-              {e.nome} (capacidade {e.capacidade})
+              {descricaoEmbarcacao(e)}
             </option>
           ))}
         </CampoSelecao>
@@ -89,6 +96,7 @@ export default function ViagemModal({ embarcacoes, rotas, aoFechar, aoProgramada
           value={campos.rotaId}
           onChange={(e) => alterar('rotaId', e.target.value)}
           erro={erros.rotaId}
+          ajuda={rotaEscolhida?.nome}
           disabled={rotas.length === 0}
         >
           <option value="">Escolha a rota</option>
