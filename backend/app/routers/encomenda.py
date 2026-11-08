@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.models.cliente import Cliente
 from app.models.empresa import Empresa
 from app.models.usuario import Usuario
+from app.models.encomenda import StatusEncomenda
 from app.schemas.movimentacao import RastreioOut
 from app.services.cliente import buscar_cliente_por_usuario
 from app.services.empresa import buscar_empresa_por_usuario
@@ -23,6 +24,10 @@ from app.services.encomenda import (
 )
 
 router = APIRouter(prefix="/encomendas", tags=["encomendas"])
+
+MENSAGEM_ENTREGUE_SO_PELA_RETIRADA = (
+    "O status entregue so e registrado pela retirada da encomenda."
+)
 
 
 @router.post("", response_model=EncomendaOut, status_code=status.HTTP_201_CREATED)
@@ -121,6 +126,13 @@ def atualizar_status(
     empresa: Empresa = Depends(empresa_logado),
     db: Session = Depends(get_db),
 ):
+    """Muda o status manualmente. `entregue` fica de fora: so a retirada o gera."""
+    if dados.status == StatusEncomenda.ENTREGUE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=MENSAGEM_ENTREGUE_SO_PELA_RETIRADA,
+        )
+
     encomenda = buscar_encomenda_por_id(db, encomenda_id)
 
     if encomenda is None:

@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.core.security import criar_token_acesso
 from app.models.empresa import PerfilEmpresa
 from app.models.encomenda import Encomenda, StatusEncomenda
+from app.models.movimentacao import Movimentacao
 from app.schemas.cliente import ClienteCreate
 from app.schemas.destinatario import DestinatarioCreate
 from app.schemas.usuario import UsuarioCreate
@@ -415,6 +416,49 @@ def test_atualizar_status_encomenda_sucesso(client, db_session, rota_com_paradas
 
     assert response.status_code == 200
     assert response.json()["status"] == "recebida"
+
+
+@pytest.mark.parametrize("status_atual", list(StatusEncomenda))
+def test_patch_nao_aceita_status_entregue_em_nenhum_status_de_origem(
+    client, db_session, headers_administrador, criar_encomenda_no_banco, status_atual
+):
+    encomenda = criar_encomenda_no_banco(status_atual)
+
+    response = client.patch(
+        f"/encomendas/{encomenda.id}/status",
+        json={"status": "entregue"},
+        headers=headers_administrador,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "O status entregue so e registrado pela retirada da encomenda."
+    db_session.refresh(encomenda)
+    assert encomenda.status == status_atual
+    assert db_session.query(Movimentacao).filter_by(encomenda_id=encomenda.id).count() == 1
+
+
+def test_patch_entregue_e_recusado_antes_de_procurar_a_encomenda(client, headers_administrador):
+    response = client.patch(
+        "/encomendas/9999/status", json={"status": "entregue"}, headers=headers_administrador
+    )
+
+    assert response.status_code == 422
+
+
+def test_patch_continua_aceitando_os_demais_status(
+    client, db_session, headers_administrador, criar_encomenda_no_banco
+):
+    for novo in [s for s in StatusEncomenda if s != StatusEncomenda.ENTREGUE]:
+        encomenda = criar_encomenda_no_banco(StatusEncomenda.PENDENTE)
+
+        response = client.patch(
+            f"/encomendas/{encomenda.id}/status",
+            json={"status": novo.value},
+            headers=headers_administrador,
+        )
+
+        assert response.status_code == 200, novo
+        assert response.json()["status"] == novo.value
 
 
 def test_atualizar_status_encomenda_aceita_qualquer_perfil_de_empresa(client, db_session, rota_com_paradas):

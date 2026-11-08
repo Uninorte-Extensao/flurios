@@ -75,6 +75,23 @@ def _associar(client, headers, viagem_id, encomenda):
     assert resposta.status_code == 201
 
 
+def _retirar(client, headers_cliente, headers_retirada, encomenda):
+    """`entregue` so nasce da retirada: pessoa autorizada (cliente) e retirada (empresa)."""
+    cpf = "33344455508"
+    pessoa = client.post(
+        f"/encomendas/{encomenda['id']}/pessoa-autorizada",
+        json={"nome": "Ana Souza", "cpf": cpf},
+        headers=headers_cliente,
+    )
+    assert pessoa.status_code == 201
+    resposta = client.post(
+        f"/encomendas/{encomenda['id']}/retirada",
+        json={"cpf_retirante": cpf, "termo_aceito": True},
+        headers=headers_retirada,
+    )
+    assert resposta.status_code == 201
+
+
 def _localizacao(client, headers, viagem_id, parada_id):
     resposta = client.post(
         f"/viagens/{viagem_id}/localizacao", json={"parada_id": parada_id}, headers=headers
@@ -108,7 +125,9 @@ def test_encomenda_recem_cadastrada_tem_linha_do_tempo_com_apenas_pendente(
     assert _resumo(corpo) == [("pendente", None, None)]
 
 
-def test_linha_do_tempo_completa_do_cadastro_a_entrega(client, headers_cliente, headers_administrador):
+def test_linha_do_tempo_completa_do_cadastro_a_entrega(
+    client, headers_cliente, headers_administrador, headers_funcionario_retirada
+):
     rota_id, paradas = _criar_rota(client, headers_administrador)
     encomenda = _criar_encomenda(client, headers_cliente, paradas["Tefe"])
     viagem_id = _criar_viagem(client, headers_administrador, rota_id)
@@ -123,7 +142,7 @@ def test_linha_do_tempo_completa_do_cadastro_a_entrega(client, headers_cliente, 
     _localizacao(client, headers_administrador, viagem_id, paradas["Tefe"])
     _status_encomenda(client, headers_administrador, encomenda, "chegou_ao_destino")
     _status_encomenda(client, headers_administrador, encomenda, "a_retirar")
-    _status_encomenda(client, headers_administrador, encomenda, "entregue")
+    _retirar(client, headers_cliente, headers_funcionario_retirada, encomenda)
 
     corpo = _linha_do_tempo(client, headers_cliente, encomenda)
 
