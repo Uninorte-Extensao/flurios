@@ -108,28 +108,47 @@ def test_viagens_conta_em_andamento_e_por_status(client, headers_empresa, db_ses
     }
 
 
-def _encomenda_para_municipio(db_session, cliente_id, municipio, n):
-    from app.models.destinatario import Destinatario
-    from app.models.encomenda import Encomenda
+def _encomendas_para_destino(db_session, cliente_id, destinatario_id, destino, n, rota_nome=None):
+    """n encomendas cujo destino real e uma parada nova chamada `destino`.
 
-    destinatario = Destinatario(
-        cliente_id=cliente_id,
-        nome=f"Dest {municipio}",
-        cpf="22233344405",
-        telefone="92988887777",
-        endereco="Rua A, 1",
-        municipio=municipio,
-    )
-    db_session.add(destinatario)
+    O municipio do destinatario e o `Tefe` da fixture e nao precisa coincidir
+    com o destino: e justamente isso que o dashboard nao deve usar.
+    """
+    from app.models.encomenda import Encomenda
+    from app.models.parada import Parada
+    from app.models.rota import Rota
+
+    rota = Rota(nome=rota_nome or f"Manaus - {destino}")
+    db_session.add(rota)
+    db_session.flush()
+    parada = Parada(rota_id=rota.id, nome=destino, ordem=2)
+    db_session.add(parada)
     db_session.flush()
 
     for i in range(n):
         db_session.add(
             Encomenda(
                 cliente_id=cliente_id,
-                destinatario_id=destinatario.id,
-                codigo_rastreio=f"FLU-{municipio[:3].upper()}-{i:04d}",
+                destinatario_id=destinatario_id,
+                parada_destino_id=parada.id,
+                codigo_rastreio=f"FLU-{destino[:3].upper()}-{rota.id}-{i:03d}",
                 descricao="Caixa",
+            )
+        )
+    db_session.commit()
+
+
+def _encomendas_sem_destino(db_session, cliente_id, destinatario_id, n):
+    from app.models.encomenda import Encomenda
+
+    for i in range(n):
+        db_session.add(
+            Encomenda(
+                cliente_id=cliente_id,
+                destinatario_id=destinatario_id,
+                parada_destino_id=None,
+                codigo_rastreio=f"FLU-ANTIGA-{i:03d}",
+                descricao="Caixa antiga",
             )
         )
     db_session.commit()
@@ -150,13 +169,13 @@ def test_municipios_sem_encomendas_retorna_lista_vazia(client, headers_empresa):
     assert resposta.json() == {"total": 0, "municipios": []}
 
 
-def test_municipios_conta_e_ordena_do_maior_para_o_menor(
+def test_municipios_conta_pelo_destino_da_encomenda_e_ordena_do_maior_para_o_menor(
     client, headers_empresa, db_session, criar_encomenda_no_banco
 ):
     primeira = criar_encomenda_no_banco()  # destino Tefe (1 encomenda)
-    cliente_id = primeira.cliente_id
-    _encomenda_para_municipio(db_session, cliente_id, "Parintins", 3)
-    _encomenda_para_municipio(db_session, cliente_id, "Coari", 2)
+    cliente_id, destinatario_id = primeira.cliente_id, primeira.destinatario_id
+    _encomendas_para_destino(db_session, cliente_id, destinatario_id, "Parintins", 3)
+    _encomendas_para_destino(db_session, cliente_id, destinatario_id, "Coari", 2)
 
     corpo = client.get("/dashboard/municipios", headers=headers_empresa).json()
 
@@ -166,6 +185,61 @@ def test_municipios_conta_e_ordena_do_maior_para_o_menor(
         {"municipio": "Coari", "total": 2},
         {"municipio": "Tefe", "total": 1},
     ]
+
+
+def test_municipios_ignora_o_municipio_do_destinatario(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    """Destinatario de Tefe com encomenda cujo destino e Coari conta em Coari."""
+    base = criar_encomenda_no_banco()
+    _encomendas_para_destino(db_session, base.cliente_id, base.destinatario_id, "Coari", 2)
+
+    municipios = {
+        m["municipio"]: m["total"]
+        for m in client.get("/dashboard/municipios", headers=headers_empresa).json()["municipios"]
+    }
+
+    assert municipios == {"Tefe": 1, "Coari": 2}
+    assert db_session.get(type(base.destinatario), base.destinatario_id).municipio == "Tefe"
+
+
+def test_municipios_agrupa_paradas_de_rotas_diferentes_com_o_mesmo_nome(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    base = criar_encomenda_no_banco()  # Tefe (1)
+    _encomendas_para_destino(
+        db_session, base.cliente_id, base.destinatario_id, "Tefe", 2, rota_nome="Manaus - Tefe (rapida)"
+    )
+
+    corpo = client.get("/dashboard/municipios", headers=headers_empresa).json()
+
+    assert corpo["municipios"] == [{"municipio": "Tefe", "total": 3}]
+
+
+def test_municipios_agrupa_encomendas_antigas_sem_destino_em_grupo_proprio(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    base = criar_encomenda_no_banco()  # Tefe (1)
+    _encomendas_sem_destino(db_session, base.cliente_id, base.destinatario_id, 4)
+
+    corpo = client.get("/dashboard/municipios", headers=headers_empresa).json()
+
+    assert corpo["total"] == 5
+    # o grupo sem destino sai por ultimo mesmo sendo o maior
+    assert corpo["municipios"] == [
+        {"municipio": "Tefe", "total": 1},
+        {"municipio": "Sem destino definido", "total": 4},
+    ]
+
+
+def test_municipios_so_com_encomendas_antigas(client, headers_empresa, db_session, criar_encomenda_no_banco):
+    base = criar_encomenda_no_banco()
+    db_session.query(type(base)).update({"parada_destino_id": None})
+    db_session.commit()
+
+    corpo = client.get("/dashboard/municipios", headers=headers_empresa).json()
+
+    assert corpo == {"total": 1, "municipios": [{"municipio": "Sem destino definido", "total": 1}]}
 
 
 def _viagem_com_encomendas(db_session, criar_encomenda_no_banco, status_viagem, capacidade, status_encomendas, nome="Rio Negro I"):
