@@ -27,6 +27,8 @@ export const MENUS = {
       { para: '/empresa/retiradas', rotulo: 'Retiradas', icone: PackageCheck, perfis: PERFIS_RETIRADA },
       { para: '/empresa/dashboard', rotulo: 'Dashboard', icone: ChartColumn },
     ],
+    // A ordem é a prioridade: os 4 primeiros (já filtrados por perfil) ficam fixos e o resto vai
+    // para o "Mais". Sem "Dashboard": Início (/empresa) já abre o mesmo painel.
     barraInferior: [
       { para: '/empresa', rotulo: 'Início', icone: House, exato: true },
       { para: '/empresa/encomendas', rotulo: 'Encomendas', icone: Package },
@@ -34,7 +36,6 @@ export const MENUS = {
       { para: '/empresa/viagens', rotulo: 'Viagens', icone: Navigation },
       { para: '/empresa/embarcacoes', rotulo: 'Embarcações', icone: Ship },
       { para: '/empresa/rotas', rotulo: 'Rotas', icone: Route },
-      { para: '/empresa/dashboard', rotulo: 'Dashboard', icone: ChartColumn },
     ],
     suporte: { para: '/empresa/suporte', rotulo: 'Suporte', icone: CircleHelp },
   },

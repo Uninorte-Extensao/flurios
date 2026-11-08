@@ -43,7 +43,11 @@ export default function AppLayout({ area }) {
           <Outlet />
         </main>
       </div>
-      <BottomNav itens={itensDoMenuParaUsuario(menu.barraInferior, usuario)} />
+      <BottomNav
+        itens={itensDoMenuParaUsuario(menu.barraInferior, usuario)}
+        suporte={menu.suporte}
+        aoSair={aoSair}
+      />
     </div>
   )
 }
