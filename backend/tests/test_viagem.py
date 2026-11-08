@@ -213,20 +213,69 @@ def test_empresa_associa_encomenda_a_viagem(client, headers_administrador, criar
     assert resposta.json()["encomenda_id"] == encomenda.id
 
 
-def test_associar_nao_altera_status_da_encomenda(
+def test_associar_leva_encomenda_a_aguardando_embarque_com_movimentacao(
     client, db_session, headers_administrador, criar_encomenda_no_banco
 ):
     viagem_id = _criar_viagem_api(client, headers_administrador)
     encomenda = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
 
-    client.post(
-        f"/viagens/{viagem_id}/encomendas",
-        json={"encomenda_id": encomenda.id},
-        headers=headers_administrador,
-    )
-    db_session.refresh(encomenda)
+    resposta = _associar_http(client, headers_administrador, viagem_id, encomenda)
 
-    assert encomenda.status.value == "recebida"
+    assert resposta.status_code == 201
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.AGUARDANDO_EMBARQUE
+    historico = _historico_de(db_session, encomenda.id)
+    assert [m.status for m in historico] == [
+        StatusEncomenda.RECEBIDA,
+        StatusEncomenda.AGUARDANDO_EMBARQUE,
+    ]
+    assert historico[-1].viagem_id == viagem_id
+
+
+def test_associar_encomenda_ja_aguardando_embarque_nao_duplica_movimentacao(
+    client, db_session, headers_administrador, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.AGUARDANDO_EMBARQUE)
+
+    assert _associar_http(client, headers_administrador, viagem_id, encomenda).status_code == 201
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.AGUARDANDO_EMBARQUE
+    assert len(_historico_de(db_session, encomenda.id)) == 1
+
+
+def test_associar_recusado_nao_altera_status_nem_movimentacao(
+    client, db_session, headers_administrador, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
+    _definir_status_viagem(db_session, viagem_id, StatusViagem.CONCLUIDA)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+
+    resposta = _associar_http(client, headers_administrador, viagem_id, encomenda)
+
+    assert resposta.status_code == 409
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.RECEBIDA
+    assert len(_historico_de(db_session, encomenda.id)) == 1
+
+
+def test_associar_e_desassociar_fecha_o_ciclo_recebida_aguardando_recebida(
+    client, db_session, headers_administrador, criar_encomenda_no_banco
+):
+    viagem_id = _criar_viagem_api(client, headers_administrador)
+    encomenda = criar_encomenda_no_banco(StatusEncomenda.RECEBIDA)
+
+    _associar_http(client, headers_administrador, viagem_id, encomenda)
+    assert _remover(client, headers_administrador, viagem_id, encomenda.id).status_code == 204
+
+    db_session.refresh(encomenda)
+    assert encomenda.status == StatusEncomenda.RECEBIDA
+    assert [m.status for m in _historico_de(db_session, encomenda.id)] == [
+        StatusEncomenda.RECEBIDA,
+        StatusEncomenda.AGUARDANDO_EMBARQUE,
+        StatusEncomenda.RECEBIDA,
+    ]
 
 
 def test_viagem_em_andamento_aceita_encomenda(

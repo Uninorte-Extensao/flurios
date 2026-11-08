@@ -104,6 +104,11 @@ def associar_encomenda(
     viagem: Viagem,
     encomenda: Encomenda,
 ) -> ViagemEncomenda:
+    """Coloca a encomenda na viagem e a passa para aguardando_embarque.
+
+    ValueError: viagem inativa, encomenda ja em viagem ativa, status invalido,
+    sem destino, destino fora da rota ou embarcacao sem capacidade.
+    """
     if viagem.status not in STATUS_VIAGEM_ATIVOS:
         raise ValueError(MENSAGEM_VIAGEM_NAO_ATIVA)
 
@@ -146,6 +151,15 @@ def associar_encomenda(
     vinculo = ViagemEncomenda(viagem_id=viagem.id, encomenda_id=encomenda.id)
 
     db.add(vinculo)
+    # Vinculo, status e movimentacao (com a viagem) saem no mesmo commit. Se a
+    # encomenda ja estava aguardando embarque, nada e registrado de novo.
+    atualizar_status_encomenda(
+        db,
+        encomenda,
+        StatusEncomenda.AGUARDANDO_EMBARQUE,
+        commit=False,
+        viagem_id=viagem.id,
+    )
     db.commit()
     db.refresh(vinculo)
 
