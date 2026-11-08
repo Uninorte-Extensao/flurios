@@ -18,6 +18,38 @@ from app.services.movimentacao import registrar_movimentacao
 
 MAX_TENTATIVAS_CODIGO = 10
 
+# Mudancas de status permitidas pelo PATCH /encomendas/{id}/status (manual). "entregue" nao
+# aparece: so a retirada o gera. Os fluxos que mudam o status por dentro (associar, remover da
+# viagem, cancelar viagem, localizacao, retirada) chamam atualizar_status_encomenda direto e
+# nao passam por esta tabela.
+TRANSICOES_MANUAIS: dict[StatusEncomenda, frozenset[StatusEncomenda]] = {
+    StatusEncomenda.PENDENTE: frozenset(
+        {StatusEncomenda.RECEBIDA, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.RECEBIDA: frozenset(
+        {StatusEncomenda.AGUARDANDO_EMBARQUE, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.AGUARDANDO_EMBARQUE: frozenset(
+        {StatusEncomenda.EMBARCADA, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.EMBARCADA: frozenset(
+        {StatusEncomenda.EM_TRANSITO, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.EM_TRANSITO: frozenset(
+        {StatusEncomenda.CHEGOU_AO_DESTINO, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.CHEGOU_AO_DESTINO: frozenset(
+        {StatusEncomenda.A_RETIRAR, StatusEncomenda.IMPREVISTO}
+    ),
+    StatusEncomenda.A_RETIRAR: frozenset({StatusEncomenda.IMPREVISTO}),
+    StatusEncomenda.ENTREGUE: frozenset(),
+    StatusEncomenda.IMPREVISTO: frozenset({StatusEncomenda.RECEBIDA}),
+}
+
+
+def transicao_manual_valida(atual: StatusEncomenda, novo: StatusEncomenda) -> bool:
+    return novo in TRANSICOES_MANUAIS.get(atual, frozenset())
+
 
 def gerar_codigo_rastreio_unico(db: Session) -> str:
     for _ in range(MAX_TENTATIVAS_CODIGO):

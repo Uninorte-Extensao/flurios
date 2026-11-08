@@ -170,7 +170,7 @@ def test_patch_com_o_mesmo_status_nao_registra_movimentacao(
         f"/encomendas/{encomenda.id}/status", json={"status": "pendente"}, headers=headers_administrador
     )
 
-    assert resposta.status_code == 200
+    assert resposta.status_code == 409
     assert len(_historico(db_session, encomenda.id)) == 1
 
 
