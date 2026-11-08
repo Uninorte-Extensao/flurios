@@ -215,17 +215,27 @@ def criar_encomenda_no_banco(db_session, rota_com_paradas):
 def associar_a_viagem(client, db_session):
     """Associa pela API uma encomenda de qualquer status a uma viagem.
 
-    A API so aceita encomendas recebidas ou aguardando embarque. Para montar
+    A API so aceita encomendas recebidas ou aguardando embarque, e a associacao
+    leva a encomenda a aguardando_embarque (com movimentacao). Para montar
     cenarios com encomendas em outros status (embarcada, entregue...), a
-    encomenda e associada como recebida e o status real e restaurado direto no
-    banco, sem gerar movimentacao.
+    encomenda e associada como recebida, a movimentacao gerada pela associacao
+    e descartada e o status real e restaurado direto no banco: a fixture nao
+    deixa rastro no historico.
     """
     from app.models.encomenda import StatusEncomenda
+    from app.models.movimentacao import Movimentacao
 
     def _associar(headers, viagem_id, encomenda):
         status_real = encomenda.status
         encomenda.status = StatusEncomenda.RECEBIDA
         db_session.commit()
+        ultima_movimentacao = (
+            db_session.query(Movimentacao.id)
+            .order_by(Movimentacao.id.desc())
+            .limit(1)
+            .scalar()
+            or 0
+        )
 
         resposta = client.post(
             f"/viagens/{viagem_id}/encomendas",
@@ -234,6 +244,9 @@ def associar_a_viagem(client, db_session):
         )
         assert resposta.status_code == 201, resposta.text
 
+        db_session.query(Movimentacao).filter(
+            Movimentacao.id > ultima_movimentacao
+        ).delete()
         encomenda.status = status_real
         db_session.commit()
 

@@ -168,6 +168,7 @@ def test_cancelamento_de_viagem_aparece_como_imprevisto_com_a_viagem(
     assert _resumo(corpo) == [
         ("pendente", None, None),
         ("recebida", None, None),
+        ("aguardando_embarque", None, viagem_id),
         ("imprevisto", None, viagem_id),
     ]
 
@@ -196,8 +197,10 @@ def test_encomenda_realocada_apos_cancelamento_segue_na_nova_viagem(
     assert _resumo(corpo) == [
         ("pendente", None, None),
         ("recebida", None, None),
+        ("aguardando_embarque", None, viagem_cancelada),
         ("imprevisto", None, viagem_cancelada),
         ("recebida", None, None),
+        ("aguardando_embarque", None, nova_viagem),
         ("embarcada", None, None),
         ("em_transito", "Manaus", nova_viagem),
     ]
@@ -230,6 +233,7 @@ def test_localizacao_aparece_na_linha_do_tempo_de_cada_encomenda_a_bordo(
     assert _resumo(_linha_do_tempo(client, headers_cliente, em_terra)) == [
         ("pendente", None, None),
         ("recebida", None, None),
+        ("aguardando_embarque", None, viagem_id),
     ]
 
 
