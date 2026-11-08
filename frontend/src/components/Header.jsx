@@ -53,7 +53,7 @@ export default function Header({ nomeUsuario, rotuloUsuario, placeholderBusca = 
           </span>
           <span className="header__usuario-texto">
             <small>{rotuloUsuario}:</small>
-            <strong>{nomeUsuario}</strong>
+            <strong title={nomeUsuario}>{nomeUsuario}</strong>
           </span>
         </div>
       </div>
