@@ -27,7 +27,8 @@ export function obterOcupacao() {
 }
 
 // { total, envios: [{ codigo_rastreio, destinatario, municipio_destino, proxima_parada | null,
-//   status, progresso }] }. `progresso` é a proporção (0 a 1) das paradas da rota já registradas.
+//   status, progresso }] }. `progresso` é a proporção (0 a 1) do trecho da encomenda (da origem até o destino dela) já percorrido;
+//   `proxima_parada` é a seguinte nesse trecho, ou null se já chegou ao destino.
 export function obterEnviosAtivos() {
   return api.get('/dashboard/envios-ativos')
 }
