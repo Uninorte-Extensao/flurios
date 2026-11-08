@@ -5,14 +5,15 @@ Plataforma de gestão e rastreamento de entregas fluviais na Amazônia (Manaus �
 ## Como trabalhar (regras fixas)
 
 1. **Antes de codar qualquer coisa**, leia o que já existe (`backend/`, `frontend/`, `docs/`, `design/`, `README.md`, `docker-compose.yml`) e siga os padrões já usados. Não reescreva o que já funciona.
-2. **Uma tarefa por vez**, na ordem do backlog (`docs/flurios-backlog-tarefas.md` — IDs 0.x, 1.x ... 8.x e F.1 ... F.8). Não pule dependências. Antes de começar uma tarefa, diga qual é e o que vai fazer em 2–3 linhas.
+2. **Uma tarefa por vez**, na ordem do backlog (`docs/flurios-backlog-tarefas.md` — IDs 0.x, 1.x ... 8.x, F.1 ... F.8 e A.1 ... A.10 do lote de acabamento). Não pule dependências. Antes de começar uma tarefa, diga qual é e o que vai fazer em 2–3 linhas.
 3. **Uma branch e um commit por tarefa.**
-   - Branch a partir de `develop` (se não existir, avise o usuário antes de criar): `feat/T<ID>-<slug>`, ex.: `feat/T1.3-hash-senha`.
-   - Ao terminar: rodar os testes, commitar, `git push -u origin <branch>`, mesclar em `develop` (sem tocar na `main`) e dar `git push origin develop`, para a próxima tarefa partir do código atualizado.
+   - Branch a partir de `develop` (se não existir, avise o usuário antes de criar): `feature/<ID>-<slug>`, ex.: `feature/T1.3-hash-senha` ou `feature/F.8-dashboard`. Correção fora da ordem do backlog: `fix/<slug>`; manutenção e documentação: `chore/<slug>`.
+   - Ao terminar: rodar os testes, commitar, `git push -u origin <branch>`, mesclar em `develop` com `git merge --no-ff` (sem tocar na `main`) e dar `git push origin develop`, para a próxima tarefa partir do código atualizado.
    - Nunca commitar direto na `main`. Nunca usar `--force`, `--no-verify` nem `reset --hard`.
    - Mensagem de commit no padrão do projeto: `tipo(escopo): descrição curta em português`, ex.: `feat(auth): T1.3 hash de senha e criar_usuario`. Tipos: `feat`, `fix`, `test`, `chore`, `docs`, `refactor`. Escopos: `auth`, `clientes`, `encomendas`, `embarcacoes`, `rotas`, `viagens`, `rastreio`, `retirada`, `dashboard`, `front`, `infra`.
    - Um commit por tarefa (pode ser mais de um só se a tarefa for grande; nunca misturar duas tarefas).
-4. **Cada tarefa só termina com testes passando** (`pytest` no backend; build/lint no frontend). Se algo falhar, corrija antes do commit. Se travar, pare e explique em vez de improvisar.
+4. **Cada tarefa só termina com testes passando.** Antes do commit e do merge em `develop`, rodar e ver passar: `pytest` (backend) e `npm run lint`, `npm test` e `npm run build` (frontend). Se algo falhar, corrija antes do commit. Se travar, pare e explique em vez de improvisar.
+   - **Rode os testes em um comando próprio e confira o código de saída antes de commitar.** Nunca encadeie `pytest ... | tail` (nem qualquer pipe) com `&& git commit`: o pipe devolve o código de saída do último comando (`tail`), então um teste que falhou não impede o commit. Para enxugar a saída use `-q`, ou grave em arquivo e leia o código: `python -m pytest -q > saida.txt; echo "pytest=$?"`.
 5. **Não invente requisitos.** Se algo estiver ambíguo ou conflitar com as regras abaixo, pergunte.
 6. Ao fim de cada tarefa, responda em poucas linhas: o que foi feito, arquivos principais, como testar, próxima tarefa sugerida.
 
@@ -37,7 +38,7 @@ Plataforma de gestão e rastreamento de entregas fluviais na Amazônia (Manaus �
 
 Referências em `design/`: painel da transportadora (web), visão do cliente (web) e versão mobile. **Toda tela nova deve parecer parte da mesma família**: mesmo header, menu lateral, cards, tabelas, badges, tipografia e espaçamento. Para telas sem referência (login, cadastro de cliente, nova encomenda, gestão de embarcações/rotas/viagens, retirada, dashboard), derive o layout dos prints existentes.
 
-- Header azul escuro com logo FLURIOS (barco e ondas), busca no centro, sino de notificação, usuário logado à direita.
+- Header azul `#135999` (o azul principal da paleta, não o azul escuro) com logo FLURIOS (barco e ondas), busca no centro, sino de notificação, usuário logado à direita.
 - Menu lateral (web): Painel Operacional, Embarcações, Rotas, Viagens, Encomendas, Dashboard; rodapé com Suporte e Sair. Item ativo em verde. No mobile: barra inferior (Início, Encomendas, Viagens, Embarcações, Rotas).
 - Cards brancos com cantos arredondados e sombra leve sobre fundo azul-gelo; KPIs com número grande; tabelas com cabeçalho cinza claro; barras de progresso azul/verde.
 - Paleta (extraída dos protótipos): azul principal `#135999`, azul escuro `#0A2F52`, verde `#53BD92` / escuro `#3A9975`, fundo gelo `#EAF3FB`, cartão `#F6F9FC`, texto `#1F2937`, cinza `#64748B`, âmbar `#D99A3D`, coral `#E0706E`.
