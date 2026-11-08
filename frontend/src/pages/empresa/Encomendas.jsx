@@ -49,7 +49,7 @@ function Destinatario({ destinatario }) {
 }
 
 function ViagemAtiva({ viagem }) {
-  if (!viagem) return <span className="texto-suave">—</span>
+  if (!viagem) return <span className="texto-suave">Sem viagem</span>
 
   return (
     <span className="encomendas__viagem">
