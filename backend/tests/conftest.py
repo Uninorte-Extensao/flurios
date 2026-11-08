@@ -95,6 +95,18 @@ def headers_atendente(db_session):
 
 
 @pytest.fixture()
+def headers_funcionario_retirada(db_session):
+    from app.models.empresa import PerfilEmpresa
+
+    return _headers_empresa_com_perfil(
+        db_session,
+        PerfilEmpresa.FUNCIONARIO_RETIRADA,
+        "Funcionario Retirada",
+        "retirada@teste.com",
+    )
+
+
+@pytest.fixture()
 def headers_cliente(db_session):
     from app.core.security import criar_token_acesso
     from app.schemas.cliente import ClienteCreate

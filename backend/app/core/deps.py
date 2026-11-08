@@ -76,6 +76,22 @@ def empresa_logado(
     return empresa
 
 
+def empresa_retirada(
+    empresa: Empresa = Depends(empresa_logado),
+) -> Empresa:
+    """Quem pode registrar retirada: funcionario do ponto de retirada e administrador."""
+    if empresa.perfil not in (
+        PerfilEmpresa.FUNCIONARIO_RETIRADA,
+        PerfilEmpresa.ADMINISTRADOR,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acao restrita ao funcionario do ponto de retirada e a administradores.",
+        )
+
+    return empresa
+
+
 def empresa_administrador(
     empresa: Empresa = Depends(empresa_logado),
 ) -> Empresa:

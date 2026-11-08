@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import empresa_logado
+from app.core.deps import empresa_retirada
 from app.db.session import get_db
 from app.models.empresa import Empresa
 from app.schemas.retirada import RetiradaCreate, RetiradaOut
@@ -23,10 +23,10 @@ router = APIRouter(prefix="/encomendas", tags=["retirada"])
 def retirar_encomenda(
     encomenda_id: int,
     dados: RetiradaCreate,
-    empresa: Empresa = Depends(empresa_logado),
+    empresa: Empresa = Depends(empresa_retirada),
     db: Session = Depends(get_db),
 ):
-    """Registra a retirada (qualquer perfil da empresa) e marca como entregue."""
+    """Registra a retirada (funcionario_retirada ou administrador) e marca como entregue."""
     encomenda = buscar_encomenda_por_id(db, encomenda_id)
 
     if encomenda is None:
