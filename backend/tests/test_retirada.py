@@ -60,11 +60,11 @@ def _historico(db_session, encomenda):
 
 
 def test_retirada_marca_encomenda_como_entregue_e_gera_movimentacao(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    resposta = _retirar(client, headers_empresa, encomenda)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda)
 
     assert resposta.status_code == 201
     corpo = resposta.json()
@@ -81,11 +81,11 @@ def test_retirada_marca_encomenda_como_entregue_e_gera_movimentacao(
 
 
 def test_retirada_guarda_cpf_completo_e_a_empresa_que_registrou(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    _retirar(client, headers_empresa, encomenda, cpf="111.222.333-96")
+    _retirar(client, headers_funcionario_retirada, encomenda, cpf="111.222.333-96")
 
     retirada = db_session.query(Retirada).one()
     assert retirada.cpf_retirante == CPF_AUTORIZADO
@@ -93,8 +93,17 @@ def test_retirada_guarda_cpf_completo_e_a_empresa_que_registrou(
     assert retirada.termo_aceito is True
 
 
-@pytest.mark.parametrize("perfil", list(PerfilEmpresa))
-def test_qualquer_perfil_da_empresa_registra_retirada(
+PERFIS_COM_PERMISSAO_DE_RETIRADA = [
+    PerfilEmpresa.FUNCIONARIO_RETIRADA,
+    PerfilEmpresa.ADMINISTRADOR,
+]
+PERFIS_SEM_PERMISSAO_DE_RETIRADA = [
+    perfil for perfil in PerfilEmpresa if perfil not in PERFIS_COM_PERMISSAO_DE_RETIRADA
+]
+
+
+@pytest.mark.parametrize("perfil", PERFIS_COM_PERMISSAO_DE_RETIRADA)
+def test_funcionario_retirada_e_administrador_registram_retirada(
     client, db_session, criar_encomenda_no_banco, perfil
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
@@ -103,12 +112,33 @@ def test_qualquer_perfil_da_empresa_registra_retirada(
     assert _retirar(client, headers, encomenda).status_code == 201
 
 
+@pytest.mark.parametrize("perfil", PERFIS_SEM_PERMISSAO_DE_RETIRADA)
+def test_outros_perfis_da_empresa_recebem_403_e_nada_muda(
+    client, db_session, criar_encomenda_no_banco, perfil
+):
+    encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
+    headers = _headers_empresa_com_perfil(db_session, perfil)
+
+    resposta = _retirar(client, headers, encomenda)
+
+    assert resposta.status_code == 403
+    assert CPF_AUTORIZADO not in resposta.text
+    _assert_nada_mudou(db_session, encomenda)
+
+
+def test_perfis_sem_permissao_sao_todos_cobertos_pelo_teste_de_403():
+    assert {p.value for p in PERFIS_SEM_PERMISSAO_DE_RETIRADA} == {
+        "atendente",
+        "operador_embarcacao",
+    }
+
+
 def test_termo_nao_aceito_retorna_422_e_nao_altera_nada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    resposta = _retirar(client, headers_empresa, encomenda, termo_aceito=False)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda, termo_aceito=False)
 
     assert resposta.status_code == 422
     assert CPF_AUTORIZADO not in resposta.text
@@ -116,12 +146,12 @@ def test_termo_nao_aceito_retorna_422_e_nao_altera_nada(
 
 
 def test_termo_ausente_conta_como_nao_aceito(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
     resposta = client.post(
-        _url(encomenda), json={"cpf_retirante": CPF_AUTORIZADO}, headers=headers_empresa
+        _url(encomenda), json={"cpf_retirante": CPF_AUTORIZADO}, headers=headers_funcionario_retirada
     )
 
     assert resposta.status_code == 422
@@ -141,7 +171,7 @@ def _assert_nada_mudou(db_session, encomenda):
     [s for s in StatusEncomenda if s != StatusEncomenda.A_RETIRAR],
 )
 def test_so_permite_retirada_de_encomenda_a_retirar(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, status_inicial
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco, status_inicial
 ):
     encomenda = criar_encomenda_no_banco(status_inicial)
     db_session.add(
@@ -149,7 +179,7 @@ def test_so_permite_retirada_de_encomenda_a_retirar(
     )
     db_session.commit()
 
-    resposta = _retirar(client, headers_empresa, encomenda)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda)
 
     assert resposta.status_code == 409
     db_session.refresh(encomenda)
@@ -158,22 +188,22 @@ def test_so_permite_retirada_de_encomenda_a_retirar(
 
 
 def test_sem_pessoa_autorizada_a_retirada_e_recusada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco, com_pessoa=False)
 
-    resposta = _retirar(client, headers_empresa, encomenda)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda)
 
     assert resposta.status_code == 409
     _assert_nada_mudou(db_session, encomenda)
 
 
 def test_cpf_diferente_da_pessoa_autorizada_retorna_403(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    resposta = _retirar(client, headers_empresa, encomenda, cpf=CPF_OUTRO)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda, cpf=CPF_OUTRO)
 
     assert resposta.status_code == 403
     assert CPF_OUTRO not in resposta.text
@@ -182,23 +212,23 @@ def test_cpf_diferente_da_pessoa_autorizada_retorna_403(
 
 
 def test_cpf_invalido_retorna_422(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    resposta = _retirar(client, headers_empresa, encomenda, cpf="12345678900")
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda, cpf="12345678900")
 
     assert resposta.status_code == 422
     _assert_nada_mudou(db_session, encomenda)
 
 
 def test_segunda_retirada_da_mesma_encomenda_e_recusada(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
-    _retirar(client, headers_empresa, encomenda)
+    _retirar(client, headers_funcionario_retirada, encomenda)
 
-    resposta = _retirar(client, headers_empresa, encomenda)
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda)
 
     assert resposta.status_code == 409
     assert db_session.query(Retirada).count() == 1
@@ -220,35 +250,35 @@ def test_retirada_exige_login(client, db_session, criar_encomenda_no_banco):
     assert _retirar(client, {}, encomenda).status_code == 401
 
 
-def test_encomenda_inexistente_retorna_404(client, headers_empresa):
+def test_encomenda_inexistente_retorna_404(client, headers_funcionario_retirada):
     resposta = client.post(
         "/encomendas/9999/retirada",
         json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": True},
-        headers=headers_empresa,
+        headers=headers_funcionario_retirada,
     )
 
     assert resposta.status_code == 404
 
 
 def test_cpf_nao_vai_para_o_log(
-    client, db_session, headers_empresa, criar_encomenda_no_banco, caplog
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco, caplog
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
     with caplog.at_level(logging.DEBUG):
-        _retirar(client, headers_empresa, encomenda, cpf=CPF_OUTRO)
-        _retirar(client, headers_empresa, encomenda)
+        _retirar(client, headers_funcionario_retirada, encomenda, cpf=CPF_OUTRO)
+        _retirar(client, headers_funcionario_retirada, encomenda)
 
     assert CPF_AUTORIZADO not in caplog.text
     assert CPF_OUTRO not in caplog.text
 
 
 def test_resposta_da_retirada_traz_cpf_mascarado_e_nunca_o_completo(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     encomenda = _encomenda_a_retirar(db_session, criar_encomenda_no_banco)
 
-    resposta = _retirar(client, headers_empresa, encomenda, cpf="111.222.333-96")
+    resposta = _retirar(client, headers_funcionario_retirada, encomenda, cpf="111.222.333-96")
 
     assert resposta.status_code == 201
     assert resposta.json()["cpf_retirante"] == "111.***.***-96"

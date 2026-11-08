@@ -154,7 +154,9 @@ def _parada_destino_id(db_session):
     return db_session.query(Parada).filter(Parada.ordem == 2).order_by(Parada.id).first().id
 
 
-def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco):
+def _percorrer_fluxo_completo(
+    client, db_session, headers_empresa, headers_retirada, criar_encomenda_no_banco
+):
     api = _Gravador(client)
 
     # Cliente novo cadastra seu CPF (POST /clientes) e um destinatario
@@ -207,11 +209,11 @@ def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomen
 
     api.request("PATCH", f"/encomendas/{encomenda_id}/status", json={"status": StatusEncomenda.A_RETIRAR.value}, headers=headers_empresa)
     retirar = f"/encomendas/{encomenda_id}/retirada"
-    api.request("POST", retirar, json={"cpf_retirante": CPF_CLIENTE, "termo_aceito": True}, headers=headers_empresa)
-    api.request("POST", retirar, json={"cpf_retirante": CPF_INVALIDO_ENVIADO, "termo_aceito": True}, headers=headers_empresa)
-    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": False}, headers=headers_empresa)
-    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": True}, headers=headers_empresa)
-    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": True}, headers=headers_empresa)
+    api.request("POST", retirar, json={"cpf_retirante": CPF_CLIENTE, "termo_aceito": True}, headers=headers_retirada)
+    api.request("POST", retirar, json={"cpf_retirante": CPF_INVALIDO_ENVIADO, "termo_aceito": True}, headers=headers_retirada)
+    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": False}, headers=headers_retirada)
+    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": True}, headers=headers_retirada)
+    api.request("POST", retirar, json={"cpf_retirante": CPF_AUTORIZADO, "termo_aceito": True}, headers=headers_retirada)
 
     # Demais modulos (nao devem tocar em CPF, mas a varredura confirma)
     for caminho in ("/embarcacoes", "/rotas", "/viagens"):
@@ -220,9 +222,17 @@ def _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomen
     return api
 
 
-def test_fluxo_completo_foi_exercitado(client, db_session, headers_empresa, criar_encomenda_no_banco):
+def test_fluxo_completo_foi_exercitado(
+    client, db_session, headers_empresa, headers_funcionario_retirada, criar_encomenda_no_banco
+):
     """Garante que a varredura dinamica realmente passou pelos endpoints sensiveis."""
-    api = _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco)
+    api = _percorrer_fluxo_completo(
+        client,
+        db_session,
+        headers_empresa,
+        headers_funcionario_retirada,
+        criar_encomenda_no_banco,
+    )
     chamados = {(m, re.sub(r"/\d+", "/{id}", c), s) for m, c, s, _ in api.respostas}
 
     assert ("POST", "/clientes", 201) in chamados
@@ -237,10 +247,16 @@ def test_fluxo_completo_foi_exercitado(client, db_session, headers_empresa, cria
 
 
 def test_nenhuma_resposta_da_api_devolve_cpf(
-    client, db_session, headers_empresa, criar_encomenda_no_banco
+    client, db_session, headers_empresa, headers_funcionario_retirada, criar_encomenda_no_banco
 ):
     """Nenhuma resposta (sucesso ou erro) traz CPF completo, formatado ou digitado de volta."""
-    api = _percorrer_fluxo_completo(client, db_session, headers_empresa, criar_encomenda_no_banco)
+    api = _percorrer_fluxo_completo(
+        client,
+        db_session,
+        headers_empresa,
+        headers_funcionario_retirada,
+        criar_encomenda_no_banco,
+    )
 
     assert api.vazamentos() == set()
 
