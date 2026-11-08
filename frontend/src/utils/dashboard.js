@@ -64,7 +64,19 @@ export function varianteOcupacao(proporcao) {
   return proporcao > 1 ? 'coral' : 'azul'
 }
 
-// Progresso completo (todas as paradas registradas) vira verde; antes disso, azul.
+// Envio sem viagem: a API devolve próxima parada nula e progresso 0 (não confundir com "já no destino", que é 100%).
+export function envioSemViagem(envio) {
+  return envio.proxima_parada == null && !(Number(envio.progresso) > 0)
+}
+
+// Texto da coluna "Próxima parada": a parada, "Sem viagem" ou, se já chegou ao destino, "No destino".
+export function textoProximaParada(envio) {
+  if (envio.proxima_parada != null) return envio.proxima_parada
+
+  return envioSemViagem(envio) ? 'Sem viagem' : 'No destino'
+}
+
+// Progresso completo (trecho da encomenda até o destino percorrido) vira verde; antes disso, azul.
 export function varianteProgresso(proporcao) {
   return proporcao >= 1 ? 'verde' : 'azul'
 }

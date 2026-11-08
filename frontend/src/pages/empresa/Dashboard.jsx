@@ -29,6 +29,7 @@ import {
   percentualDoMaior,
   percentualDoTotal,
   textoOcupacao,
+  textoProximaParada,
   varianteOcupacao,
   varianteProgresso,
 } from '../../utils/dashboard'
@@ -183,7 +184,7 @@ function Envios({ dados }) {
     },
     { chave: 'destinatario', titulo: 'Destinatário' },
     { chave: 'municipio_destino', titulo: 'Destino' },
-    { chave: 'proxima_parada', titulo: 'Próxima parada', render: (e) => e.proxima_parada ?? '—' },
+    { chave: 'proxima_parada', titulo: 'Próxima parada', render: textoProximaParada },
     { chave: 'status', titulo: 'Status', render: (e) => <StatusBadge status={e.status} /> },
     { chave: 'progresso', titulo: 'Progresso', render: (e) => <Progresso proporcao={e.progresso} /> },
   ]
@@ -206,7 +207,7 @@ function Envios({ dados }) {
             <span>
               {e.destinatario} · {e.municipio_destino}
             </span>
-            <span className="texto-suave">Próxima parada: {e.proxima_parada ?? '—'}</span>
+            <span className="texto-suave">Próxima parada: {textoProximaParada(e)}</span>
             <Progresso proporcao={e.progresso} />
           </li>
         ))}

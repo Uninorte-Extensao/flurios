@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   caminhoViagem,
   ENVIOS_POR_VEZ,
+  envioSemViagem,
   formatarNumero,
   larguraBarra,
   limitarEnvios,
@@ -14,6 +15,7 @@ import {
   percentualDoMaior,
   percentualDoTotal,
   textoOcupacao,
+  textoProximaParada,
   totalDoStatus,
   varianteOcupacao,
   varianteProgresso,
@@ -112,4 +114,16 @@ test('formatarNumero usa separador de milhar em português', () => {
 
 test('caminhoViagem leva ao detalhe da viagem', () => {
   assert.equal(caminhoViagem(7), '/empresa/viagens/7')
+})
+
+test('próxima parada: a parada, "Sem viagem" ou "No destino"', () => {
+  assert.equal(textoProximaParada({ proxima_parada: 'Tefé', progresso: 0.5 }), 'Tefé')
+  assert.equal(textoProximaParada({ proxima_parada: null, progresso: 0 }), 'Sem viagem')
+  assert.equal(textoProximaParada({ proxima_parada: null, progresso: 1 }), 'No destino')
+})
+
+test('envio sem viagem = sem próxima parada e progresso 0; no destino (100%) não é sem viagem', () => {
+  assert.equal(envioSemViagem({ proxima_parada: null, progresso: 0 }), true)
+  assert.equal(envioSemViagem({ proxima_parada: 'Manaus', progresso: 0 }), false)
+  assert.equal(envioSemViagem({ proxima_parada: null, progresso: 1 }), false)
 })
