@@ -7,6 +7,7 @@ import {
   NOVO_DESTINATARIO,
   ordenarHistorico,
   podeDefinirPessoaAutorizada,
+  proximaParadaDoCliente,
   validarEncomenda,
   validarPessoaAutorizada,
 } from './encomenda.js'
@@ -123,4 +124,36 @@ test('pessoa autorizada: nome e CPF válidos são exigidos, exceto se for o dest
   const erros = validarPessoaAutorizada({ usarDestinatario: false, nome: ' ', cpf: '111.111.111-11' })
   assert.equal(erros.nome, 'Informe o nome da pessoa autorizada.')
   assert.equal(erros.cpf, 'CPF inválido.')
+})
+
+// Rota Manaus (origem, fora da lista) -> Careiro -> Tefé -> Coari, e outra rota à parte.
+const DESTINOS = [
+  { id: 2, nome: 'Careiro', rota_nome: 'Manaus - Coari' },
+  { id: 3, nome: 'Tefé', rota_nome: 'Manaus - Coari' },
+  { id: 4, nome: 'Coari', rota_nome: 'Manaus - Coari' },
+  { id: 9, nome: 'Parintins', rota_nome: 'Manaus - Parintins' },
+]
+const em = (parada_id) => ({ status: 'em_transito', parada_id })
+const proxima = (status, destinoId, historico) =>
+  proximaParadaDoCliente({ status, destinoId, destinos: DESTINOS, historico })
+
+test('próxima parada: a seguinte à última localização, dentro do trecho até o destino', () => {
+  assert.equal(proxima('embarcada', 3, []), 'Careiro')
+  assert.equal(proxima('em_transito', 3, [em(null)]), 'Careiro')
+  assert.equal(proxima('em_transito', 3, [em(null), em(1)]), 'Careiro') // 1 = origem, fora da lista
+  assert.equal(proxima('em_transito', 3, [em(2)]), 'Tefé')
+  assert.equal(proxima('em_transito', 4, [em(2), em(3)]), 'Coari')
+})
+
+test('próxima parada: nula ao chegar ao destino, depois dele ou fora da viagem a bordo', () => {
+  assert.equal(proxima('em_transito', 3, [em(2), em(3)]), null)
+  assert.equal(proxima('em_transito', 3, [em(2), em(3), em(4)]), null)
+  assert.equal(proxima('pendente', 3, []), null)
+  assert.equal(proxima('chegou_ao_destino', 3, [em(3)]), null)
+  assert.equal(proxima('em_transito', null, []), null)
+  assert.equal(proxima('em_transito', 99, []), null)
+})
+
+test('próxima parada: não mistura paradas de outra rota', () => {
+  assert.equal(proxima('embarcada', 9, []), 'Parintins')
 })

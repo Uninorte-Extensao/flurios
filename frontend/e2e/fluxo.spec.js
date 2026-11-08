@@ -285,6 +285,18 @@ test('07 operação da viagem: iniciar, embarcar, localização em cada parada, 
     await page.getByRole('button', { name: 'Registrar localização' }).click()
     await expect(page.getByText(new RegExp(`Localização registrada em ${parada}`))).toBeVisible()
     await capturar(page, `viagem-localizacao-${parada === 'Manaus' ? 'manaus' : 'tefe'}`)
+
+    // V-1 (parcial): o cliente vê a próxima parada no "Rastreamento atual"; ao chegar em Tefé (destino) ela some.
+    const cliente = paginas.cliente
+    await cliente.goto(`/cliente/encomendas/${estado.codigo}`)
+    await expect(cliente.getByText('Linha do tempo')).toBeVisible()
+    const proxima = cliente.getByText('Próxima parada:')
+    if (parada === 'Manaus') {
+      await expect(proxima).toBeVisible()
+      await expect(proxima.locator('xpath=following-sibling::strong[1]')).toHaveText('Tefé')
+    } else {
+      await expect(proxima).toHaveCount(0)
+    }
   }
 
   await abrirEncomendaEmpresa(page, estado.codigo)
