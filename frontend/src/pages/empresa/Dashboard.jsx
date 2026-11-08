@@ -6,6 +6,7 @@ import BlocoCarga from '../../components/BlocoCarga'
 import Card from '../../components/Card'
 import StatusBadge from '../../components/StatusBadge'
 import Tabela from '../../components/Tabela'
+import { rotuloDoStatus } from '../../utils/status'
 import {
   obterEncomendasPorMunicipio,
   obterEnviosAtivos,
@@ -98,7 +99,7 @@ function Viagens({ dados }) {
             valor={formatarNumero(total)}
             percentualBarra={percentualDoTotal(total, dados.total)}
             variante={VARIANTE_BARRA_VIAGEM[status]}
-            nomeBarra={`Viagens ${status}: ${total} de ${dados.total}`}
+            nomeBarra={`Viagens ${rotuloDoStatus(status).toLowerCase()}: ${total} de ${dados.total}`}
           />
         ))}
       </ul>

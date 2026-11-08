@@ -420,6 +420,10 @@ test('12 painel e dashboard da empresa com dados', async () => {
   await expect(page.getByText('Painel Operacional').first()).toBeVisible()
   await capturar(page, 'admin-painel-final')
 
+  // T-1: o texto acessível das barras de viagens usa o status em português, com acento.
+  await expect(page.getByRole('progressbar', { name: /^Viagens concluída: \d+ de \d+$/ })).toBeVisible()
+  await expect(page.getByRole('progressbar', { name: /Viagens (concluida|em_andamento)/ })).toHaveCount(0)
+
   // Endereço antigo (F-5): redireciona para o painel, que tem um único item de menu.
   await page.goto('/empresa/dashboard')
   await expect(page).toHaveURL(/\/empresa$/)
