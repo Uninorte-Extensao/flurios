@@ -11,6 +11,8 @@ import { formatarTelefoneDigitado, telefoneValido } from '../utils/telefone'
 import { emailValido } from '../utils/validacao'
 import './Auth.css'
 
+// Aviso imediato, antes de enviar. Quem garante a regra é o backend (UsuarioCreate, schemas/usuario.py):
+// se o valor mudar lá, mude aqui também. Um 422 da API aparece no próprio campo (erro.erros).
 const SENHA_MINIMA = 6
 
 const CAMPOS_VAZIOS = {
