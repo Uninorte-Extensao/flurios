@@ -11,6 +11,10 @@
   color: var(--branco);
 }
 
+.header .logo {
+  flex-shrink: 0;
+}
+
 .header__busca {
   display: flex;
   align-items: center;
@@ -64,6 +68,7 @@
   display: flex;
   align-items: center;
   gap: var(--espaco-2);
+  min-width: 0;
 }
 
 .header__avatar {
@@ -81,7 +86,16 @@
 .header__usuario-texto {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   line-height: 1.15;
+}
+
+/* Cada linha do usuário fica em uma só linha; o que não couber termina em reticências */
+.header__usuario-texto small,
+.header__usuario-texto strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header__usuario-texto small {
@@ -101,5 +115,14 @@
 
   .header__busca {
     display: none;
+  }
+
+  .header__direita {
+    min-width: 0;
+    gap: var(--espaco-2);
+  }
+
+  .header__usuario-texto {
+    max-width: 150px;
   }
 }
