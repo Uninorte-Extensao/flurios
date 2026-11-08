@@ -116,14 +116,19 @@ def calcular_ocupacao_viagens_em_andamento(db: Session) -> list[dict]:
 def listar_envios_ativos(db: Session) -> list[dict]:
     """Encomendas que ainda nao foram entregues, com a situacao na viagem.
 
+    O municipio de destino e o da propria encomenda (parada_destino_id), nao o
+    do destinatario; sem parada de destino, MUNICIPIO_SEM_DESTINO (mesmo
+    rotulo do bloco de municipios).
+
     Viagem da encomenda = a mais recente que nao foi cancelada. Progresso =
     paradas da rota ja registradas na viagem / total de paradas da rota.
     Proxima parada = primeira parada (por ordem) ainda nao registrada. Sem
     viagem (ou sem paradas), progresso 0 e proxima parada nula.
     """
     encomendas = (
-        db.query(Encomenda, Destinatario)
+        db.query(Encomenda, Destinatario, Parada.nome)
         .join(Destinatario, Destinatario.id == Encomenda.destinatario_id)
+        .outerjoin(Parada, Parada.id == Encomenda.parada_destino_id)
         .filter(Encomenda.status != StatusEncomenda.ENTREGUE)
         .order_by(Encomenda.id)
         .all()
@@ -131,7 +136,7 @@ def listar_envios_ativos(db: Session) -> list[dict]:
     if not encomendas:
         return []
 
-    ids = [e.id for e, _ in encomendas]
+    ids = [e.id for e, _, _ in encomendas]
 
     # viagem mais recente (nao cancelada) de cada encomenda
     viagem_da_encomenda: dict[int, Viagem] = {}
@@ -175,7 +180,7 @@ def listar_envios_ativos(db: Session) -> list[dict]:
             registradas_por_viagem.setdefault(viagem_id, set()).add(parada_id)
 
     envios = []
-    for encomenda, destinatario in encomendas:
+    for encomenda, destinatario, destino_nome in encomendas:
         proxima = None
         progresso = 0.0
         viagem = viagem_da_encomenda.get(encomenda.id)
@@ -194,7 +199,7 @@ def listar_envios_ativos(db: Session) -> list[dict]:
             {
                 "codigo_rastreio": encomenda.codigo_rastreio,
                 "destinatario": destinatario.nome,
-                "municipio_destino": destinatario.municipio,
+                "municipio_destino": destino_nome or MUNICIPIO_SEM_DESTINO,
                 "proxima_parada": proxima,
                 "status": encomenda.status,
                 "progresso": progresso,

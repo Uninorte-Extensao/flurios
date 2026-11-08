@@ -423,6 +423,48 @@ def test_envios_ativos_exclui_entregues_e_conta_corretamente(
     assert {e["status"] for e in corpo["envios"]} == {"pendente", "imprevisto", "a_retirar"}
 
 
+def test_envios_ativos_municipio_destino_e_o_destino_real_da_encomenda(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    """Destinatario de Tefe com encomenda cujo destino e Coari aparece como Coari."""
+    base = criar_encomenda_no_banco()  # destino Tefe, destinatario de Tefe
+    _encomendas_para_destino(db_session, base.cliente_id, base.destinatario_id, "Coari", 1)
+
+    envios = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"]
+
+    por_codigo = {e["codigo_rastreio"]: e["municipio_destino"] for e in envios}
+    assert por_codigo.pop(base.codigo_rastreio) == "Tefe"
+    assert list(por_codigo.values()) == ["Coari"]
+    assert db_session.get(type(base.destinatario), base.destinatario_id).municipio == "Tefe"
+
+
+def test_envios_ativos_encomenda_antiga_sem_destino_vira_sem_destino_definido(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    base = criar_encomenda_no_banco()
+    _encomendas_sem_destino(db_session, base.cliente_id, base.destinatario_id, 1)
+
+    envios = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"]
+
+    por_codigo = {e["codigo_rastreio"]: e["municipio_destino"] for e in envios}
+    assert por_codigo["FLU-ANTIGA-000"] == "Sem destino definido"
+    assert por_codigo[base.codigo_rastreio] == "Tefe"
+
+
+def test_envios_ativos_e_municipios_usam_o_mesmo_rotulo_para_sem_destino(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    base = criar_encomenda_no_banco()
+    _encomendas_sem_destino(db_session, base.cliente_id, base.destinatario_id, 2)
+
+    envios = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"]
+    municipios = client.get("/dashboard/municipios", headers=headers_empresa).json()["municipios"]
+
+    sem_destino_envios = [e for e in envios if e["municipio_destino"] == "Sem destino definido"]
+    sem_destino_municipios = [m for m in municipios if m["municipio"] == "Sem destino definido"]
+    assert len(sem_destino_envios) == sem_destino_municipios[0]["total"] == 2
+
+
 def test_envios_ativos_sem_viagem_tem_progresso_zero_e_sem_proxima_parada(
     client, headers_empresa, criar_encomenda_no_banco
 ):
