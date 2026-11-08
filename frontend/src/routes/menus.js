@@ -17,7 +17,7 @@ export const MENUS = {
   empresa: {
     base: '/empresa',
     rotuloUsuario: 'Operador',
-    placeholderBusca: 'Buscar carga, viagem...',
+    placeholderBusca: 'Buscar encomenda pelo código...',
     itens: [
       { para: '/empresa', rotulo: 'Painel Operacional', icone: LayoutDashboard, exato: true },
       { para: '/empresa/embarcacoes', rotulo: 'Embarcações', icone: Ship },

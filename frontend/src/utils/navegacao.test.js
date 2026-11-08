@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { MENUS } from '../routes/menus.js'
-import { dividirItensDaBarra } from './navegacao.js'
+import { caminhoDaBusca, dividirItensDaBarra } from './navegacao.js'
 import { itensDoMenuParaUsuario } from './perfil.js'
 
 const PERFIS_EMPRESA = ['administrador', 'atendente', 'operador_embarcacao', 'funcionario_retirada']
@@ -56,4 +56,24 @@ test('funcionário de retirada e administrador têm Retiradas entre os fixos; os
 
 test('a barra do cliente continua com 3 itens, sem "Mais"', () => {
   assert.deepEqual(dividirItensDaBarra(MENUS.cliente.barraInferior).extras, [])
+})
+
+test('busca do header da empresa abre o detalhe da encomenda com o código normalizado', () => {
+  assert.equal(caminhoDaBusca('empresa', 'flx4k9ab3c1z'), '/empresa/encomendas/FLX4K9AB3C1Z')
+  assert.equal(caminhoDaBusca('empresa', '  FLX4K9AB3C1Z  '), '/empresa/encomendas/FLX4K9AB3C1Z')
+})
+
+test('busca do header do cliente continua abrindo o detalhe do cliente', () => {
+  assert.equal(caminhoDaBusca('cliente', 'flx123'), '/cliente/encomendas/FLX123')
+})
+
+test('busca vazia ou de área desconhecida não navega', () => {
+  assert.equal(caminhoDaBusca('empresa', ''), null)
+  assert.equal(caminhoDaBusca('empresa', '   '), null)
+  assert.equal(caminhoDaBusca('empresa', null), null)
+  assert.equal(caminhoDaBusca('outra', 'FLX1'), null)
+})
+
+test('busca escapa caracteres que quebrariam a URL do detalhe', () => {
+  assert.equal(caminhoDaBusca('empresa', 'a/b?c#d'), '/empresa/encomendas/A%2FB%3FC%23D')
 })
