@@ -131,6 +131,63 @@
   min-height: 36px;
 }
 
+/* Escolha da viagem: um cartão por opção, com quebra de linha */
+.associar__opcoes {
+  display: grid;
+  gap: var(--espaco-2);
+  min-width: 0;
+  margin: 0 0 var(--espaco-2);
+  padding: 0;
+  border: 0;
+}
+
+.associar__opcoes legend {
+  margin-bottom: var(--espaco-1);
+  padding: 0;
+}
+
+.associar__opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaco-3);
+  min-width: 0;
+  padding: var(--espaco-3) var(--espaco-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+}
+
+.associar__opcao input {
+  flex: none;
+  margin-top: 3px;
+  accent-color: var(--azul);
+}
+
+.associar__opcao:has(input:checked) {
+  border-color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.associar__opcao:has(input:focus-visible) {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+.associar__opcao .associar__info > * {
+  overflow-wrap: anywhere;
+}
+
+.associar__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.associar__ajuda {
+  margin: 0 0 var(--espaco-4);
+}
+
 @media (max-width: 900px) {
   .encomenda__corpo {
     grid-template-columns: minmax(0, 1fr);

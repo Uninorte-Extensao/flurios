@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 import Alerta from '../../components/Alerta'
-import CampoSelecao from '../../components/CampoSelecao'
 import Carregando from '../../components/Carregando'
 import ErroCarga from '../../components/ErroCarga'
 import Modal from '../../components/Modal'
+import StatusBadge from '../../components/StatusBadge'
 import { useCarga } from '../../hooks/useCarga'
 import { listarEmbarcacoes } from '../../services/embarcacoes'
 import { obterRota } from '../../services/rotas'
@@ -32,12 +32,10 @@ async function carregarElegiveis(paradaDestinoId) {
     }))
 }
 
-const descricaoViagem = (v) =>
-  `Viagem #${v.id} · ${v.embarcacao_nome} · ${v.rota_nome} · saída ${formatarDataHora(v.data_saida)} (${STATUS_VIAGEM[v.status]})`
-
 // Associa uma encomenda (recebida ou aguardando embarque) a uma viagem elegível.
 // `aoAssociada(viagemId)` roda depois do sucesso; os 409 do backend aparecem na própria janela.
 export default function AssociarViagemModal({ encomenda, aoFechar, aoAssociada }) {
+  const idAjuda = useId()
   const destinoId = encomenda.parada_destino_id
   const carregar = useCallback(() => carregarElegiveis(destinoId), [destinoId])
   const { carregando, erro, dados, recarregar } = useCarga(carregar)
@@ -89,22 +87,36 @@ export default function AssociarViagemModal({ encomenda, aoFechar, aoAssociada }
         <form onSubmit={enviar} noValidate>
           {erroAcao && <Alerta tipo="erro">{erroAcao}</Alerta>}
 
-          <CampoSelecao
-            rotulo="Viagem"
-            value={viagemId}
-            onChange={(e) => {
-              setViagemId(e.target.value)
-              setErroAcao('')
-            }}
-            ajuda="Só aparecem viagens programadas ou em andamento cuja rota contém o destino da encomenda."
-          >
-            <option value="">Escolha a viagem</option>
+          {/* Lista de opções, não <select>: cada viagem quebra linha e mostra tudo, sem texto cortado. */}
+          <fieldset className="associar__opcoes" aria-describedby={idAjuda}>
+            <legend className="campo__rotulo">Viagem</legend>
             {elegiveis.map((v) => (
-              <option key={v.id} value={v.id}>
-                {descricaoViagem(v)}
-              </option>
+              <label key={v.id} className="associar__opcao">
+                <input
+                  type="radio"
+                  name="viagem"
+                  value={v.id}
+                  checked={viagemId === String(v.id)}
+                  onChange={(e) => {
+                    setViagemId(e.target.value)
+                    setErroAcao('')
+                  }}
+                />
+                <span className="associar__info">
+                  <span className="associar__titulo">
+                    <strong>Viagem #{v.id}</strong>
+                    <StatusBadge status={v.status} />
+                  </span>
+                  <span>{v.embarcacao_nome}</span>
+                  <span className="texto-suave">{v.rota_nome}</span>
+                  <small className="texto-suave">Saída {formatarDataHora(v.data_saida)}</small>
+                </span>
+              </label>
             ))}
-          </CampoSelecao>
+          </fieldset>
+          <p id={idAjuda} className="campo__ajuda associar__ajuda">
+            Só aparecem viagens programadas ou em andamento cuja rota contém o destino da encomenda.
+          </p>
 
           <div className="modal__acoes">
             <button type="button" className="btn btn--contorno" onClick={aoFechar} disabled={enviando}>
