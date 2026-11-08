@@ -196,7 +196,7 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 - ✅ Nome do usuário no header sem capitalizar → resolvido em B.4.
 - ✅ `PATCH` aceitava sair de `entregue` → resolvido em B.3.
 - ✅ Select do modal de programar viagem → resolvido em B.5.
-- Em aberto: o menu lateral (web) continua com "Painel Operacional" e "Dashboard" apontando para a mesma tela, como no menu definido no `CLAUDE.md`; só a barra mobile perdeu a redundância.
+- ✅ Menu lateral (web) com "Painel Operacional" e "Dashboard" apontando para a mesma tela → resolvido em C.3 (item único; `/empresa/dashboard` redireciona).
 
 ---
 
@@ -216,9 +216,42 @@ Ninguém consegue trabalhar em módulos sem isso pronto primeiro. Poucas tarefas
 
 ---
 
+## ACABAMENTO DA PRIMEIRA VERSÃO — LOTE 3 (correções da bateria e2e)
+*Origem: `docs/relatorio-testes-e2e.md` (17 defeitos). Mesmas regras: uma branch `fix/...` por correção, um commit por item, merge em `develop` só com `pytest`, `npm run lint`, `npm test`, `npm run build` e `npm run test:e2e` passando, cada um em comando próprio. Backend: 445 (+2 xfail) → 516 testes, sem xfail; frontend: 107 → 117 testes unitários; e2e de tela: 13 cenários.*
+
+| # | Tarefa | Prioridade | Dificuldade | Depende de |
+|---|---|---|---|---|
+| C.1 | ✅ F-1 — transições de status da encomenda (`fix/transicoes-status-encomenda`): `PATCH /encomendas/{id}/status` só aceita `pendente→recebida→aguardando_embarque→embarcada→em_transito→chegou_ao_destino→a_retirar`, qualquer status (menos `entregue`) → `imprevisto`, e `imprevisto→recebida`; as demais respondem **409** ("Transicao de status invalida: a -> b."), inclusive repetir o status atual (antes era 200 sem efeito). Tabela `TRANSICOES_MANUAIS` em `services/encomenda.py`, só no PATCH: associar, desassociar, localização, cancelamento de viagem e retirada chamam o serviço direto e seguem iguais. Mensagem traduzida em `mensagens.js`. Matriz de testes com todos os pares; xfail do F-1 convertido | P0 | 🟡 | 3.7, A.5, B.3 |
+| C.2 | ✅ D-1 — próxima parada e progresso dos envios ativos (`fix/dashboard-proxima-parada-progresso`): o trecho da encomenda vai da primeira parada da rota até o **destino dela**; a posição é a **última localização registrada** para a encomenda na viagem. Progresso = posição / paradas do trecho; chegou ao destino (ou `chegou_ao_destino` / `a_retirar`) = 100% e sem próxima parada. Destino fora da rota ou ausente: rota inteira (como antes). Só o `/dashboard/envios-ativos` tinha esse cálculo. xfail do D-1 convertido | P1 | 🟡 | 8.5, B.2 |
+| C.3 | ✅ F-5 — um único item de menu para o painel (`fix/menu-painel-unico`): menu lateral só com "Painel Operacional" (a barra mobile já tinha só "Início"); `/empresa/dashboard` redireciona para `/empresa`. Teste do menu e e2e do redirecionamento | P1 | 🟢 | F.8, A.6 |
+| C.4 | ✅ T-1 e T-3 — textos (`fix/front-textos-t1-t3`): "Viagens concluída: 1 de 3" no texto acessível das barras (`rotuloDoStatus`, em `utils/status.js`, também usado pelo `StatusBadge`); exemplo de busca `FLX5MBAFUSZ3L` (formato real: `FLX` + 10 caracteres, sem hífen) | P2 | 🟢 | F.6, F.7, F.8 |
+| C.5 | ✅ F-6 — CORS (`fix/cors-127-0-0-1`): `http://127.0.0.1:5173` liberado, com teste; origem desconhecida segue bloqueada | P2 | 🟢 | 0.x |
+| C.6 | ✅ V-5 — 360px (`fix/front-barra-inferior-cabecalho-360`): rótulos da barra inferior quebram em duas linhas; nome do usuário no cabeçalho em uma linha só, com reticências | P2 | 🟢 | A.6, B.4 |
+| C.7 | ✅ D-2 — "Sem viagem" no lugar do traço (`fix/front-sem-viagem-marcador`): coluna Viagem da lista de encomendas; próxima parada do envio ativo ("Sem viagem" ou "No destino") | P2 | 🟢 | F.6, F.8 |
+| C.8 | ✅ D-3 — "Ainda não saiu" (`fix/front-envio-ainda-nao-saiu`): envio sem viagem não mostra mais a barra em 0% | P2 | 🟢 | C.7 |
+| C.9 | 🟡 V-1 (parcial) — próxima parada para o cliente (`fix/front-cliente-proxima-parada`): o card "Rastreamento atual" mostra "Próxima parada", calculada com `GET /rotas/destinos` (já ordenado por rota e ordem) e as localizações do histórico; some ao chegar ao destino. Depende dessa ordem, agora travada por teste de backend. Agrupa por `rota_nome`: duas rotas com o mesmo nome poderiam se misturar (o nome da rota não é único no banco). O restante do V-1 está em Melhorias futuras | P1 | 🟡 | 6.4, F.4 |
+
+**Corrigidos no lote 3:** F-1, F-5, F-6, T-1, T-3, V-5, D-1, D-2, D-3 e parte do V-1.
+
+**Dos 12 defeitos de gravidade baixa, ficaram de fora (6):**
+- **F-2** (iniciar/concluir viagem não muda as encomendas): decisão de produto, coerente com "atualização manual". Aguarda confirmação.
+- **F-3** (sem tela para criar atendente, operador e funcionário da retirada): exige tela nova.
+- **F-4** (404 no console ao abrir encomenda sem pessoa autorizada): vem do endpoint; mudar exigiria alterar o contrato do backend.
+- **T-2** (mensagens da API sem acento): são dezenas de mensagens e de testes que as comparam; a interface já traduz. Só afeta quem usa a API ou o Swagger.
+- **V-3** (início do cliente quase vazio): depende da visão do cliente completa (V-1).
+- **V-4** (texto repetido abaixo do select no modal de programar viagem): é intencional (B.5), evita o corte do nome longo.
+
+---
+
 ## MELHORIAS FUTURAS (fora do MVP)
 
 - **Peso da encomenda** (`peso_kg`): campo opcional no cadastro, útil para calcular a ocupação da embarcação. Não faz parte do MVP.
+- **Visão do cliente como no protótipo (restante do V-1)** (`design/Screenshot_2.png`): linha do tempo horizontal com as paradas (Manaus → … → destino) e o balão "Em trânsito" sobre a embarcação; card "Detalhes da Embarcação"; previsão de chegada no "Rastreamento atual". Precisa de endpoint novo (ou de ampliar `GET /encomendas/{codigo}/rastreio`) com a rota completa, a embarcação e a previsão, hoje só acessíveis à empresa. Quando existir, a "próxima parada" do cliente deve passar a vir dele, em vez de ser deduzida de `/rotas/destinos`. Também melhora o início do cliente (V-3).
+- **Painel Operacional como no protótipo (V-2)** (`design/Screenshot_1.png` e `Screenshot_3.png`): mapa de rastreamento (pode ser ilustrativo/estático), KPI grande de "Viagens em andamento" com barra e taxa de ocupação em anel.
+- **Tela para criar contas da empresa (F-3)**: atendente, operador de embarcação e funcionário da retirada hoje só nascem por `POST /empresas` e pelo script `criar_admin`.
+- **Mensagens da API com acento (T-2)**: reescrever os `detail` do backend e ajustar `mensagens.js` e os testes.
+- **Decidir o comportamento da viagem sobre as encomendas (F-2)**: iniciar/concluir a viagem poderia atualizar o status das encomendas a bordo, ou continuar manual.
+- **Erro 404 no console do detalhe do cliente (F-4)**: devolver a pessoa autorizada junto da encomenda, ou 200 vazio.
 
 ---
 
