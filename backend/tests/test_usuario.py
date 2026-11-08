@@ -23,6 +23,68 @@ def test_cadastrar_usuario_sucesso(client):
     assert "senha_hash" not in corpo
 
 
+@pytest.mark.parametrize("senha", ["", "1", "12345"])
+def test_cadastrar_usuario_com_senha_curta_retorna_422_e_nao_cria_usuario(client, db_session, senha):
+    from app.models.usuario import Usuario
+
+    response = client.post(
+        "/usuarios",
+        json={"nome": "Maria", "email": "maria@teste.com", "senha": senha},
+    )
+
+    assert response.status_code == 422
+    erro = response.json()["detail"][0]
+    assert erro["loc"][-1] == "senha"
+    assert "A senha deve ter pelo menos 6 caracteres." in erro["msg"]
+    assert db_session.query(Usuario).count() == 0
+
+
+@pytest.mark.parametrize("senha", ["123456", "1234567", "a" * 100])
+def test_cadastrar_usuario_aceita_senha_a_partir_do_minimo(client, senha):
+    response = client.post(
+        "/usuarios",
+        json={"nome": "Maria", "email": "maria@teste.com", "senha": senha},
+    )
+
+    assert response.status_code == 201
+
+
+def test_senha_curta_nao_vai_para_a_resposta_de_erro(client):
+    response = client.post(
+        "/usuarios",
+        json={"nome": "Maria", "email": "maria@teste.com", "senha": "abc12"},
+    )
+
+    assert response.status_code == 422
+    assert "abc12" not in response.text
+
+
+def test_login_continua_aceitando_conta_antiga_com_senha_curta(client, db_session):
+    """O minimo vale so para novos cadastros: quem ja tem senha curta nao fica sem acesso."""
+    from app.models.usuario import Usuario
+
+    db_session.add(
+        Usuario(nome="Antiga", email="antiga@teste.com", senha_hash=gerar_hash_senha("abc"))
+    )
+    db_session.commit()
+
+    response = client.post(
+        "/usuarios/login", json={"email": "antiga@teste.com", "senha": "abc"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["access_token"]
+
+
+def test_schema_usuario_create_exige_senha_minima():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        UsuarioCreate(nome="Maria", email="maria@teste.com", senha="12345")
+
+    assert UsuarioCreate(nome="Maria", email="maria@teste.com", senha="123456").senha == "123456"
+
+
 def test_cadastrar_usuario_email_duplicado(client):
     dados = {"nome": "Maria", "email": "maria@teste.com", "senha": "123456"}
 
