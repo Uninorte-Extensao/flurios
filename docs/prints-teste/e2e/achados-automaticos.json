@@ -1,0 +1,302 @@
+{
+  "apiDireta": "sim",
+  "codigos": {
+    "codigo": "FLXZG2B0AQ7TV",
+    "codigo2": "FLXL4WRUYHBTG",
+    "viagem1": "http://127.0.0.1:49643/empresa/viagens/1"
+  },
+  "achados": [
+    {
+      "tela": "24-atendente-painel",
+      "viewport": "desktop",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"FLXZG2B0AQ7TV\tJoão Pereira\tTefé\t—\tPendente\""
+    },
+    {
+      "tela": "24-atendente-painel",
+      "viewport": "desktop",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"1 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    },
+    {
+      "tela": "24-atendente-painel",
+      "viewport": "mobile",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"Próxima parada: —\""
+    },
+    {
+      "tela": "24-atendente-painel",
+      "viewport": "mobile",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"1 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    },
+    {
+      "tela": "25-empresa-encomendas-lista",
+      "viewport": "desktop",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"Tefé\tPendente\t—\t07/11/2026\tVer detalhes\""
+    },
+    {
+      "tela": "25-empresa-encomendas-lista",
+      "viewport": "mobile",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"—\""
+    },
+    {
+      "tela": "41-atendente-sem-acesso-retirada",
+      "viewport": "desktop",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 0 de 1\""
+    },
+    {
+      "tela": "41-atendente-sem-acesso-retirada",
+      "viewport": "desktop",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"20%\" | \"1 · 100%\" | \"67%\" | \"Ocupação de Rio Negro I: 20%\" | \"Progresso: 67%\""
+    },
+    {
+      "tela": "41-atendente-sem-acesso-retirada",
+      "viewport": "mobile",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 0 de 1\""
+    },
+    {
+      "tela": "41-atendente-sem-acesso-retirada",
+      "viewport": "mobile",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"20%\" | \"1 · 100%\" | \"67%\" | \"Ocupação de Rio Negro I: 20%\" | \"Progresso: 67%\""
+    },
+    {
+      "tela": "42-retirada-painel-funcionario",
+      "viewport": "desktop",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 0 de 1\""
+    },
+    {
+      "tela": "42-retirada-painel-funcionario",
+      "viewport": "desktop",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"20%\" | \"1 · 100%\" | \"67%\" | \"Ocupação de Rio Negro I: 20%\" | \"Progresso: 67%\""
+    },
+    {
+      "tela": "42-retirada-painel-funcionario",
+      "viewport": "mobile",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 0 de 1\""
+    },
+    {
+      "tela": "42-retirada-painel-funcionario",
+      "viewport": "mobile",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"20%\" | \"1 · 100%\" | \"67%\" | \"Ocupação de Rio Negro I: 20%\" | \"Progresso: 67%\""
+    },
+    {
+      "tela": "61-empresa-encomendas-lista-final",
+      "viewport": "desktop",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"Tefé\tEntregue\t—\t07/11/2026\tVer detalhes\""
+    },
+    {
+      "tela": "61-empresa-encomendas-lista-final",
+      "viewport": "mobile",
+      "tipo": "dados",
+      "detalhe": "Valor \"—\" exibido (1x): \"—\""
+    },
+    {
+      "tela": "62-admin-painel-final",
+      "viewport": "desktop",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 1 de 3\""
+    },
+    {
+      "tela": "62-admin-painel-final",
+      "viewport": "desktop",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"2 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    },
+    {
+      "tela": "62-admin-painel-final",
+      "viewport": "mobile",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 1 de 3\""
+    },
+    {
+      "tela": "62-admin-painel-final",
+      "viewport": "mobile",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"2 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    },
+    {
+      "tela": "63-admin-dashboard-final",
+      "viewport": "desktop",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 1 de 3\""
+    },
+    {
+      "tela": "63-admin-dashboard-final",
+      "viewport": "desktop",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"2 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    },
+    {
+      "tela": "63-admin-dashboard-final",
+      "viewport": "mobile",
+      "tipo": "texto",
+      "detalhe": "Possível palavra sem acento: \"Viagens concluida: 1 de 3\""
+    },
+    {
+      "tela": "63-admin-dashboard-final",
+      "viewport": "mobile",
+      "tipo": "info",
+      "detalhe": "Percentuais na tela: \"2 · 100%\" | \"0%\" | \"Progresso: 0%\""
+    }
+  ],
+  "respostasComErro": [
+    {
+      "papel": "anonimo",
+      "pagina": "http://127.0.0.1:49643/login",
+      "metodo": "POST",
+      "url": "/api/usuarios/login",
+      "status": 401
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXZG2B0AQ7TV",
+      "metodo": "GET",
+      "url": "/api/encomendas/1/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXZG2B0AQ7TV",
+      "metodo": "GET",
+      "url": "/api/encomendas/1/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "retirada",
+      "pagina": "http://127.0.0.1:49643/empresa/retiradas/FLXZG2B0AQ7TV",
+      "metodo": "POST",
+      "url": "/api/encomendas/1/retirada",
+      "status": 403
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "metodo": "GET",
+      "url": "/api/encomendas/2/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "metodo": "GET",
+      "url": "/api/encomendas/2/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "metodo": "GET",
+      "url": "/api/encomendas/2/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "metodo": "GET",
+      "url": "/api/encomendas/2/pessoa-autorizada",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "metodo": "GET",
+      "url": "/api/encomendas/FLX0000000000",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "metodo": "GET",
+      "url": "/api/encomendas/FLX0000000000/rastreio",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "metodo": "GET",
+      "url": "/api/encomendas/FLX0000000000",
+      "status": 404
+    },
+    {
+      "papel": "cliente",
+      "pagina": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "metodo": "GET",
+      "url": "/api/encomendas/FLX0000000000/rastreio",
+      "status": 404
+    }
+  ],
+  "errosDeConsole": [
+    {
+      "papel": "anonimo",
+      "url": "http://127.0.0.1:49643/login",
+      "texto": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXZG2B0AQ7TV",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXZG2B0AQ7TV",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "retirada",
+      "url": "http://127.0.0.1:49643/empresa/retiradas/FLXZG2B0AQ7TV",
+      "texto": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLXL4WRUYHBTG",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "papel": "cliente",
+      "url": "http://127.0.0.1:49643/cliente/encomendas/FLX0000000000",
+      "texto": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ]
+}
