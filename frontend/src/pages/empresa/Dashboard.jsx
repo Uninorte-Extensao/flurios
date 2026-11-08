@@ -249,14 +249,14 @@ function Movimentacoes({ dados }) {
 
 // Página inicial da empresa (/empresa) e item "Dashboard" do menu: indicadores só de leitura.
 // Cada bloco carrega e falha sozinho; "Atualizar" remonta todos (a `key` reinicia as cargas).
-export default function Dashboard({ titulo = 'Painel Operacional' }) {
+export default function Dashboard() {
   const [versao, setVersao] = useState(0)
 
   return (
     <>
       <div className="gestao__topo dashboard__topo">
         <div>
-          <h1 className="pagina__titulo">{titulo}</h1>
+          <h1 className="pagina__titulo">Painel Operacional</h1>
           <p className="pagina__subtitulo">Visão geral das operações e movimentações do sistema FLURIOS.</p>
         </div>
         <button type="button" className="btn btn--contorno" onClick={() => setVersao((n) => n + 1)}>

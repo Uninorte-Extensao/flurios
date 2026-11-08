@@ -420,8 +420,11 @@ test('12 painel e dashboard da empresa com dados', async () => {
   await expect(page.getByText('Painel Operacional').first()).toBeVisible()
   await capturar(page, 'admin-painel-final')
 
+  // Endereço antigo (F-5): redireciona para o painel, que tem um único item de menu.
   await page.goto('/empresa/dashboard')
-  await expect(page.getByText(/Dashboard/).first()).toBeVisible()
+  await expect(page).toHaveURL(/\/empresa$/)
+  await expect(page.getByRole('heading', { name: 'Painel Operacional' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Dashboard' })).toHaveCount(0)
   await capturar(page, 'admin-dashboard-final')
 
   await page.goto('/empresa/embarcacoes')
