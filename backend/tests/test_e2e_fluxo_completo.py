@@ -326,16 +326,9 @@ def test_fluxo_completo_e_caminho_de_excecao(api, v):
     if v.igual(len(envios), 1, "um envio ativo durante a viagem"):
         envio = envios[0]
         v.igual(envio["municipio_destino"], "Tefé", "municipio de destino do envio")
-        v.conhecido(
-            envio["proxima_parada"] != "Coari",
-            "D-1",
-            "proxima parada do envio nao deveria ser alem do destino da encomenda "
-            f"(destino Tefé, encomenda ja esta em Tefé; veio {envio['proxima_parada']!r})",
-        )
-        v.ok(
-            envio["progresso"] <= 0.67,
-            f"progresso do envio (destino = 2a de 3 paradas, ja registrada) veio {envio['progresso']}",
-        )
+        # D-1 (corrigido): a encomenda para Tefé ja esta em Tefé, entao chegou ao destino
+        v.igual(envio["proxima_parada"], None, "encomenda em Tefé (destino) nao tem proxima parada")
+        v.igual(envio["progresso"], 1.0, "progresso 100% ao chegar no destino da encomenda")
 
     # chegada e retirada
     v.igual(mudar_status(api, operador, enc["id"], "chegou_ao_destino").status_code, 200, "chegou ao destino")

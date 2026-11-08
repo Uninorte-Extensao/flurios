@@ -49,7 +49,7 @@ class EnvioAtivoOut(BaseModel):
     municipio_destino: str
     proxima_parada: str | None
     status: StatusEncomenda
-    # Proporcao (0 a 1) das paradas da rota ja registradas na viagem.
+    # Proporcao (0 a 1) do trecho da encomenda (da origem ate o destino dela) ja percorrido.
     progresso: float
 
 

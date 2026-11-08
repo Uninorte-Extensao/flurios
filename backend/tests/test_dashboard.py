@@ -509,6 +509,86 @@ def test_envios_ativos_calcula_progresso_e_proxima_parada(
     assert envio["proxima_parada"] is None
 
 
+def _encomenda_na_viagem(db_session, criar_encomenda_no_banco, destino, status, viagem):
+    """Encomenda cujo destino e `destino` (parada da rota da viagem), ja associada a viagem."""
+    encomenda = criar_encomenda_no_banco(status)
+    encomenda.parada_destino_id = destino.id
+    db_session.commit()
+    _associar(db_session, viagem, encomenda)
+
+    return encomenda
+
+
+def test_envios_ativos_progresso_e_proxima_parada_seguem_o_destino_da_encomenda(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    """Rota Manaus, Itacoatiara, Parintins; encomenda para Itacoatiara (D-1)."""
+    from app.services.viagem import registrar_localizacao
+
+    viagem, paradas = _viagem_com_rota(db_session)
+    _encomenda_na_viagem(
+        db_session, criar_encomenda_no_banco, paradas[1], StatusEncomenda.EMBARCADA, viagem
+    )
+
+    def _envio():
+        return client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"][0]
+
+    assert (_envio()["progresso"], _envio()["proxima_parada"]) == (0.0, "Manaus")
+
+    registrar_localizacao(db_session, viagem, paradas[0])
+    assert (_envio()["progresso"], _envio()["proxima_parada"]) == (0.5, "Itacoatiara")
+
+    # chegou ao destino da encomenda: 100% e sem proxima parada, mesmo faltando Parintins na rota
+    registrar_localizacao(db_session, viagem, paradas[1])
+    envio = _envio()
+    assert envio["municipio_destino"] == "Itacoatiara"
+    assert (envio["progresso"], envio["proxima_parada"]) == (1.0, None)
+
+    # a viagem segue para alem do destino: a encomenda continua concluida, nao "volta"
+    registrar_localizacao(db_session, viagem, paradas[2])
+    assert (_envio()["progresso"], _envio()["proxima_parada"]) == (1.0, None)
+
+
+def test_envios_ativos_duas_encomendas_da_mesma_viagem_tem_progresso_proprio(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    from app.services.viagem import registrar_localizacao
+
+    viagem, paradas = _viagem_com_rota(db_session)
+    perto = _encomenda_na_viagem(
+        db_session, criar_encomenda_no_banco, paradas[1], StatusEncomenda.EMBARCADA, viagem
+    )
+    longe = _encomenda_na_viagem(
+        db_session, criar_encomenda_no_banco, paradas[2], StatusEncomenda.EMBARCADA, viagem
+    )
+
+    registrar_localizacao(db_session, viagem, paradas[0])
+    registrar_localizacao(db_session, viagem, paradas[1])
+
+    envios = {
+        e["codigo_rastreio"]: e
+        for e in client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"]
+    }
+    assert (envios[perto.codigo_rastreio]["progresso"], envios[perto.codigo_rastreio]["proxima_parada"]) == (1.0, None)
+    assert (envios[longe.codigo_rastreio]["progresso"], envios[longe.codigo_rastreio]["proxima_parada"]) == (
+        0.6667,
+        "Parintins",
+    )
+
+
+def test_envios_ativos_status_chegou_ao_destino_conta_como_chegada(
+    client, headers_empresa, db_session, criar_encomenda_no_banco
+):
+    viagem, paradas = _viagem_com_rota(db_session)
+    _encomenda_na_viagem(
+        db_session, criar_encomenda_no_banco, paradas[2], StatusEncomenda.A_RETIRAR, viagem
+    )
+
+    envio = client.get("/dashboard/envios-ativos", headers=headers_empresa).json()["envios"][0]
+
+    assert (envio["progresso"], envio["proxima_parada"]) == (1.0, None)
+
+
 def test_envios_ativos_viagem_cancelada_nao_conta_progresso(
     client, headers_empresa, db_session, criar_encomenda_no_banco
 ):
