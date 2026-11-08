@@ -33,3 +33,16 @@
     font-weight: 700;
   }
 }
+
+/* Telas estreitas: a barra da empresa chega a 7 itens, então o rótulo encolhe para não encostar */
+@media (max-width: 420px) {
+  .bottomnav__item {
+    min-width: 0;
+    font-size: 10px;
+  }
+
+  /* 7 itens (administrador e ponto de retirada): mais um passo para caber em 360px */
+  .bottomnav:has(> :nth-child(7)) .bottomnav__item {
+    font-size: 9px;
+  }
+}

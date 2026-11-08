@@ -10,12 +10,12 @@ import DetalheEncomenda from '../pages/cliente/DetalheEncomenda'
 import MinhasEncomendas from '../pages/cliente/MinhasEncomendas'
 import NovaEncomenda from '../pages/cliente/NovaEncomenda'
 import EmBreve from '../pages/EmBreve'
+import Dashboard from '../pages/empresa/Dashboard'
 import DetalheEncomendaEmpresa from '../pages/empresa/DetalheEncomendaEmpresa'
 import DetalheRota from '../pages/empresa/DetalheRota'
 import DetalheViagem from '../pages/empresa/DetalheViagem'
 import Embarcacoes from '../pages/empresa/Embarcacoes'
 import Encomendas from '../pages/empresa/Encomendas'
-import PainelOperacional from '../pages/empresa/PainelOperacional'
 import RetiradaEncomenda from '../pages/empresa/RetiradaEncomenda'
 import Retiradas from '../pages/empresa/Retiradas'
 import Rotas from '../pages/empresa/Rotas'
@@ -67,7 +67,7 @@ export default function AppRoutes() {
 
       <Route element={<RotaProtegida tipos={['empresa']} />}>
         <Route path="/empresa" element={<AppLayout area="empresa" />}>
-          <Route index element={<PainelOperacional />} />
+          <Route index element={<Dashboard />} />
           <Route path="embarcacoes" element={<Embarcacoes />} />
           <Route path="rotas" element={<Rotas />} />
           <Route path="rotas/:rotaId" element={<DetalheRota />} />
@@ -79,7 +79,7 @@ export default function AppRoutes() {
             <Route path="retiradas" element={<Retiradas />} />
             <Route path="retiradas/:codigo" element={<RetiradaEncomenda />} />
           </Route>
-          <Route path="dashboard" element={<EmBreve titulo="Dashboard" />} />
+          <Route path="dashboard" element={<Dashboard titulo="Dashboard" />} />
           <Route path="suporte" element={<EmBreve titulo="Suporte" />} />
         </Route>
       </Route>

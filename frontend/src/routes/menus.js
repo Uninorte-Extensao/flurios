@@ -34,6 +34,7 @@ export const MENUS = {
       { para: '/empresa/viagens', rotulo: 'Viagens', icone: Navigation },
       { para: '/empresa/embarcacoes', rotulo: 'Embarcações', icone: Ship },
       { para: '/empresa/rotas', rotulo: 'Rotas', icone: Route },
+      { para: '/empresa/dashboard', rotulo: 'Dashboard', icone: ChartColumn },
     ],
     suporte: { para: '/empresa/suporte', rotulo: 'Suporte', icone: CircleHelp },
   },
