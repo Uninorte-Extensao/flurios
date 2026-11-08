@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { MENUS } from '../routes/menus.js'
-import { caminhoDaBusca, dividirItensDaBarra } from './navegacao.js'
+import { barraTemMais, caminhoDaBusca, dividirItensDaBarra } from './navegacao.js'
 import { itensDoMenuParaUsuario } from './perfil.js'
 
 const PERFIS_EMPRESA = ['administrador', 'atendente', 'operador_embarcacao', 'funcionario_retirada']
@@ -54,8 +54,25 @@ test('funcionário de retirada e administrador têm Retiradas entre os fixos; os
   assert.ok(!fixosDe('operador_embarcacao').includes('/empresa/retiradas'))
 })
 
-test('a barra do cliente continua com 3 itens, sem "Mais"', () => {
-  assert.deepEqual(dividirItensDaBarra(MENUS.cliente.barraInferior).extras, [])
+test('a barra do cliente tem 3 itens fixos e nenhum extra: o "Mais" abre só Suporte e Sair', () => {
+  const { fixos, extras } = dividirItensDaBarra(MENUS.cliente.barraInferior)
+
+  assert.equal(fixos.length, 3)
+  assert.deepEqual(extras, [])
+  assert.equal(barraTemMais(extras, MENUS.cliente.suporte, () => {}), true)
+})
+
+test('"Mais" existe com item sobrando, com Suporte ou com Sair; sem nenhum dos três, não', () => {
+  const item = { para: '/x' }
+
+  assert.equal(barraTemMais([item], null, null), true)
+  assert.equal(barraTemMais([], { para: '/suporte' }, null), true)
+  assert.equal(barraTemMais([], null, () => {}), true)
+  assert.equal(barraTemMais([], null, null), false)
+})
+
+test('toda área tem Suporte definido para o "Mais" abrir', () => {
+  for (const area of Object.values(MENUS)) assert.ok(area.suporte?.para)
 })
 
 test('busca do header da empresa abre o detalhe da encomenda com o código normalizado', () => {

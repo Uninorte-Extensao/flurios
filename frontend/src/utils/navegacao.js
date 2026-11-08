@@ -11,6 +11,12 @@ export function dividirItensDaBarra(itens, maxFixos = MAX_ITENS_FIXOS) {
   return { fixos: itens.slice(0, maxFixos), extras: itens.slice(maxFixos) }
 }
 
+// O "Mais" existe quando há item que não coube na barra ou quando há Suporte/Sair para abrir nele.
+// No mobile o menu lateral some, então é por aqui que o usuário (inclusive o cliente, com 3 itens) sai e pede suporte.
+export function barraTemMais(extras, suporte, aoSair) {
+  return extras.length > 0 || Boolean(suporte) || Boolean(aoSair)
+}
+
 // Telas de detalhe da encomenda: a busca do header leva o código digitado até elas.
 const DETALHE_DA_ENCOMENDA = {
   cliente: '/cliente/encomendas',

@@ -1,7 +1,7 @@
 import { Ellipsis, LogOut } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { matchPath, NavLink, useLocation } from 'react-router-dom'
-import { dividirItensDaBarra } from '../utils/navegacao'
+import { barraTemMais, dividirItensDaBarra } from '../utils/navegacao'
 import './BottomNav.css'
 
 function classeDoItem({ isActive }) {
@@ -14,7 +14,7 @@ function classeDaOpcao({ isActive }) {
 
 // Barra inferior do mobile (no web fica oculta; vale o menu lateral).
 // Até 4 itens fixos; o que passar disso, mais Suporte e Sair (que no mobile não têm outro lugar,
-// pois o menu lateral some), abre no botão "Mais".
+// pois o menu lateral some), abre no botão "Mais" — que existe em toda área, mesmo sem item sobrando.
 export default function BottomNav({ itens, suporte, aoSair }) {
   const { fixos, extras } = dividirItensDaBarra(itens)
   const { pathname } = useLocation()
@@ -23,7 +23,7 @@ export default function BottomNav({ itens, suporte, aoSair }) {
   const botaoRef = useRef(null)
   const folhaRef = useRef(null)
 
-  const temMais = extras.length > 0
+  const temMais = barraTemMais(extras, suporte, aoSair)
   const aberto = temMais && abertoEm === pathname
   const destinosDoMais = suporte ? [...extras, suporte] : extras
   const ativoNoMais = destinosDoMais.some((item) => matchPath({ path: item.para, end: Boolean(item.exato) }, pathname))
@@ -83,7 +83,7 @@ export default function BottomNav({ itens, suporte, aoSair }) {
               </NavLink>
             ))}
 
-            {(suporte || aoSair) && <hr className="bottomnav__divisor" />}
+            {extras.length > 0 && (suporte || aoSair) && <hr className="bottomnav__divisor" />}
 
             {suporte && (
               <NavLink to={suporte.para} className={classeDaOpcao}>
