@@ -38,7 +38,7 @@ test('validarRetirada acumula os dois erros', () => {
 })
 
 test('caminhoRetirada leva só o código na URL', () => {
-  assert.equal(caminhoRetirada('FLX-ABC123'), '/empresa/retiradas/FLX-ABC123')
+  assert.equal(caminhoRetirada('FLX5MBAFUSZ3L'), '/empresa/retiradas/FLX5MBAFUSZ3L')
   assert.equal(caminhoRetirada('A B'), '/empresa/retiradas/A%20B')
 })
 

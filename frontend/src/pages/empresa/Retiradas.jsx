@@ -170,7 +170,7 @@ export default function Retiradas() {
         <CampoTexto
           rotulo="Buscar por código"
           type="search"
-          placeholder="Ex.: FLX-ABC123"
+          placeholder="Ex.: FLX5MBAFUSZ3L"
           value={textoBusca}
           onChange={(e) => setTextoBusca(e.target.value)}
         />
