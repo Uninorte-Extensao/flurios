@@ -58,6 +58,10 @@
   color: var(--texto);
 }
 
+.detalhe__proxima-rotulo {
+  margin-top: var(--espaco-2);
+}
+
 .detalhe__pessoa > svg {
   flex: none;
   margin-top: 2px;

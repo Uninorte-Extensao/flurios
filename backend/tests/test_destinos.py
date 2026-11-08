@@ -63,3 +63,20 @@ def test_destinos_nao_conflita_com_detalhe_da_rota(client, headers_administrador
 
     assert resposta.status_code == 200
     assert resposta.json()["nome"] == "Manaus - Coari"
+
+
+def test_destinos_de_uma_rota_vem_na_ordem_das_paradas_mesmo_criadas_fora_de_ordem(
+    client, headers_cliente, headers_administrador
+):
+    """O frontend do cliente calcula a proxima parada contando com esta ordem (rota, depois ordem)."""
+    rota = client.post("/rotas", json={"nome": "Manaus - Coari"}, headers=headers_administrador).json()
+    for nome, ordem in [("Coari", 4), ("Manaus", 1), ("Tefe", 3), ("Careiro", 2)]:
+        client.post(
+            f"/rotas/{rota['id']}/paradas",
+            json={"nome": nome, "ordem": ordem},
+            headers=headers_administrador,
+        )
+
+    resposta = client.get("/rotas/destinos", headers=headers_cliente).json()
+
+    assert [d["nome"] for d in resposta] == ["Careiro", "Tefe", "Coari"]

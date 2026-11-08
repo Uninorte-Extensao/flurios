@@ -86,3 +86,30 @@ export function validarPessoaAutorizada({ usarDestinatario, nome, cpf }) {
 
   return erros
 }
+
+// Status em que a encomenda está a bordo: só então faz sentido falar em "próxima parada".
+const STATUS_A_BORDO = ['embarcada', 'em_transito']
+
+// Próxima parada da encomenda para o cliente, sem endpoint novo: usa `destinos` (GET /rotas/destinos,
+// já ordenado por rota e ordem da parada, sem a origem) e as localizações do histórico.
+// O trecho é da origem até o destino da encomenda, dentro da rota do destino (agrupada por `rota_nome`).
+// Devolve o nome da parada, ou null quando não há o que mostrar (não está a bordo, já chegou ao destino
+// ou não dá para saber). Previsão de chegada não existe na API: fica de fora.
+export function proximaParadaDoCliente({ status, destinoId, destinos, historico }) {
+  if (!STATUS_A_BORDO.includes(status) || destinoId == null) return null
+
+  const destino = destinos.find((d) => d.id === destinoId)
+  if (!destino) return null
+
+  const daRota = destinos.filter((d) => d.rota_nome === destino.rota_nome)
+  const trecho = daRota.slice(0, daRota.findIndex((d) => d.id === destinoId) + 1)
+
+  const ultimaLocalizacao = [...historico].reverse().find((m) => m.parada_id != null)
+  // A origem não está em `destinos`: localização nela (ou nenhuma) equivale a "antes da primeira parada do trecho".
+  const posicao = ultimaLocalizacao ? trecho.findIndex((d) => d.id === ultimaLocalizacao.parada_id) : -1
+
+  // Localização em parada da rota que fica depois do destino: a encomenda já passou por ele.
+  if (posicao === -1 && daRota.some((d) => d.id === ultimaLocalizacao?.parada_id)) return null
+
+  return trecho[posicao + 1]?.nome ?? null
+}

@@ -6,9 +6,10 @@ import Card from '../../components/Card'
 import Carregando from '../../components/Carregando'
 import LinhaDoTempo from '../../components/LinhaDoTempo'
 import StatusBadge from '../../components/StatusBadge'
-import { buscarEncomenda, buscarRastreio, listarDestinatarios } from '../../services/encomendas'
+import { buscarEncomenda, buscarRastreio, listarDestinatarios, listarDestinos } from '../../services/encomendas'
 import { mascararCpf } from '../../utils/cpf'
 import { formatarData, formatarDataHora } from '../../utils/data'
+import { proximaParadaDoCliente } from '../../utils/encomenda'
 import PessoaAutorizadaCard from './PessoaAutorizadaCard'
 import './DetalheEncomenda.css'
 
@@ -40,6 +41,7 @@ function Detalhe({ codigo }) {
     encomenda: null,
     rastreio: null,
     destinatario: null,
+    destinos: [],
   })
   const [tentativa, setTentativa] = useState(0)
 
@@ -51,11 +53,13 @@ function Detalhe({ codigo }) {
       buscarRastreio(codigo),
       // O nome do destinatário é complementar: se falhar, a tela abre mesmo assim.
       listarDestinatarios().catch(() => []),
+      // Também complementar: só serve para calcular a próxima parada.
+      listarDestinos().catch(() => []),
     ])
-      .then(([encomenda, rastreio, destinatarios]) => {
+      .then(([encomenda, rastreio, destinatarios, destinos]) => {
         if (!ativo) return
         const destinatario = destinatarios.find((d) => d.id === encomenda.destinatario_id) ?? null
-        setEstado({ carregando: false, naoEncontrada: false, erro: '', encomenda, rastreio, destinatario })
+        setEstado({ carregando: false, naoEncontrada: false, erro: '', encomenda, rastreio, destinatario, destinos })
       })
       .catch((erro) => {
         if (!ativo) return
@@ -67,6 +71,7 @@ function Detalhe({ codigo }) {
           encomenda: null,
           rastreio: null,
           destinatario: null,
+          destinos: [],
         })
       })
 
@@ -80,7 +85,7 @@ function Detalhe({ codigo }) {
     setTentativa((n) => n + 1)
   }
 
-  const { carregando, naoEncontrada, erro, encomenda, rastreio, destinatario } = estado
+  const { carregando, naoEncontrada, erro, encomenda, rastreio, destinatario, destinos } = estado
 
   if (carregando) return <Carregando />
   if (naoEncontrada) return <NaoEncontrada codigo={codigo} />
@@ -98,6 +103,12 @@ function Detalhe({ codigo }) {
 
   const ultimaMovimentacao = rastreio.historico[rastreio.historico.length - 1]
   const ultimaParada = [...rastreio.historico].reverse().find((m) => m.parada_nome)
+  const proximaParada = proximaParadaDoCliente({
+    status: rastreio.status_atual,
+    destinoId: encomenda.parada_destino_id,
+    destinos,
+    historico: rastreio.historico,
+  })
 
   return (
     <>
@@ -155,6 +166,12 @@ function Detalhe({ codigo }) {
               <div>
                 <small className="texto-suave">Última parada registrada:</small>
                 <strong>{ultimaParada ? ultimaParada.parada_nome : 'Ainda não saiu de Manaus'}</strong>
+                {proximaParada && (
+                  <>
+                    <small className="texto-suave detalhe__proxima-rotulo">Próxima parada:</small>
+                    <strong>{proximaParada}</strong>
+                  </>
+                )}
                 {ultimaMovimentacao && (
                   <small className="texto-suave">
                     Atualizado em {formatarDataHora(ultimaMovimentacao.criado_em)}
